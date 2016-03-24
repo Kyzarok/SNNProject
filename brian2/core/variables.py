@@ -57,10 +57,9 @@ def get_dtype(obj):
 def get_dtype_str(val):
     '''
     Returns canonical string representation of the dtype of a value or dtype
-    
+
     Returns
     -------
-    
     dtype_str : str
         The numpy dtype name
     '''
@@ -79,7 +78,7 @@ def get_dtype_str(val):
         return get_dtype_str(val.dtype)
     if isinstance(val, numbers.Number):
         return get_dtype_str(np.array(val).dtype)
-    
+
     return 'unknown[%s, %s]' % (str(val), val.__class__.__name__)
 
 
@@ -94,7 +93,7 @@ class Variable(object):
     An object providing information about model variables (including implicit
     variables such as ``t`` or ``xi``). This class should never be
     instantiated outside of testing code, use one of its subclasses instead.
-    
+
     Parameters
     ----------
     name : 'str'
@@ -129,7 +128,7 @@ class Variable(object):
     '''
     def __init__(self, name, unit, owner=None, dtype=None, scalar=False,
                  constant=False, read_only=False, dynamic=False, array=False):
-        
+
         #: The variable's unit.
         self.unit = unit
 
@@ -137,7 +136,8 @@ class Variable(object):
         self.name = name
 
         #: The `Group` to which this variable belongs.
-        self.owner = weakproxy_with_fallback(owner) if owner is not None else None
+        self.owner = (weakproxy_with_fallback(owner)
+                      if owner is not None else None)
 
         #: The dtype used for storing the variable.
         self.dtype = dtype
@@ -173,7 +173,7 @@ class Variable(object):
         The dimensions of this variable.
         '''
         return self.unit.dim
-    
+
     @property
     def dtype_str(self):
         '''
@@ -721,7 +721,8 @@ class VariableView(object):
     Parameters
     ----------
     name : str
-        The name of the variable (not necessarily the same as ``variable.name``).
+        The name of the variable (not necessarily the same as
+        ``variable.name``).
     variable : `Variable`
         The variable description.
     group : `Group`
@@ -937,7 +938,8 @@ class VariableView(object):
                 for index_group in index_groups:
                     if not hasattr(index_group, 'variables'):
                         continue
-                    if varname in index_group.variables or var.name in index_group.variables:
+                    if (varname in index_group.variables or
+                                var.name in index_group.variables):
                         indexed_var = index_group.variables.get(varname,
                                                                 index_group.variables.get(var.name))
                         if not indexed_var is var:
@@ -965,6 +967,7 @@ class VariableView(object):
         # array for situations where iterate_all could be used
         from brian2.codegen.codeobject import create_runner_codeobj
         from brian2.devices.device import get_default_codeobject_class
+        codeobj_class = get_default_codeobject_class('codegen.string_expression_target')
         codeobj = create_runner_codeobj(self.group,
                                         abstract_code,
                                         'group_variable_set',
@@ -972,7 +975,7 @@ class VariableView(object):
                                         check_units=check_units,
                                         level=level+2,
                                         run_namespace=run_namespace,
-                                        codeobj_class=get_default_codeobject_class('codegen.string_expression_target'))
+                                        codeobj_class=codeobj_class)
         codeobj()
 
     @device_override('variableview_set_with_expression_conditional')
@@ -1011,6 +1014,7 @@ class VariableView(object):
         # TODO: Have an additional argument to avoid going through the index
         # array for situations where iterate_all could be used
         from brian2.devices.device import get_default_codeobject_class
+        codeobj_class = get_default_codeobject_class('codegen.string_expression_target')
         codeobj = create_runner_codeobj(self.group,
                                         {'condition': abstract_code_cond,
                                          'statement': abstract_code},
@@ -1019,7 +1023,7 @@ class VariableView(object):
                                         check_units=check_units,
                                         level=level+2,
                                         run_namespace=run_namespace,
-                                        codeobj_class=get_default_codeobject_class('codegen.string_expression_target'))
+                                        codeobj_class=codeobj_class)
         codeobj()
 
     @device_override('variableview_get_with_expression')
@@ -1060,13 +1064,14 @@ class VariableView(object):
         abstract_code += '_cond = ' + code
         from brian2.codegen.codeobject import create_runner_codeobj
         from brian2.devices.device import get_default_codeobject_class
+        codeobj_class = get_default_codeobject_class('codegen.string_expression_target')
         codeobj = create_runner_codeobj(self.group,
                                         abstract_code,
                                         'group_variable_get_conditional',
                                         additional_variables=variables,
                                         level=level+2,
                                         run_namespace=run_namespace,
-                                        codeobj_class=get_default_codeobject_class('codegen.string_expression_target')
+                                        codeobj_class=codeobj_class
                                         )
         return codeobj()
 
@@ -1087,7 +1092,8 @@ class VariableView(object):
         return variable.get_value()[indices]
 
     @device_override('variableview_get_subexpression_with_index_array')
-    def get_subexpression_with_index_array(self, item, level=0, run_namespace=None):
+    def get_subexpression_with_index_array(self, item, level=0,
+                                           run_namespace=None):
         variable = self.variable
         if variable.scalar:
             if not (isinstance(item, slice) and item == slice(None)):
@@ -1115,7 +1121,9 @@ class VariableView(object):
         variables['_group_idx'].set_value(indices)
         # Force the use of this variable as a replacement for the original
         # index variable
-        using_orig_index = [varname for varname, index in self.group.variables.indices.iteritems()
+        var_indices = self.group.variables.indices
+        using_orig_index = [varname
+                            for varname, index in var_indices.iteritems()
                             if index == self.index_var_name and index != '0']
         for varname in using_orig_index:
             variables.indices[varname] = '_idx'
@@ -1123,6 +1131,7 @@ class VariableView(object):
         abstract_code = '_variable = ' + self.name + '\n'
         from brian2.codegen.codeobject import create_runner_codeobj
         from brian2.devices.device import get_default_codeobject_class
+        codeobj_class = get_default_codeobject_class('codegen.string_expression_target')
         codeobj = create_runner_codeobj(self.group,
                                         abstract_code,
                                         'group_variable_get',
@@ -1136,8 +1145,8 @@ class VariableView(object):
                                         additional_variables=variables,
                                         level=level+2,
                                         run_namespace=run_namespace,
-                                        codeobj_class=get_default_codeobject_class('codegen.string_expression_target')
-        )
+                                        codeobj_class=codeobj_class
+                                        )
         result = codeobj()
         if single_index and not variable.scalar:
             return result[0]
@@ -1149,7 +1158,8 @@ class VariableView(object):
         variable = self.variable
         if check_units:
             fail_for_dimension_mismatch(variable.unit, value,
-                                        'Incorrect unit for setting variable %s' % self.name)
+                                        'Incorrect unit for setting variable '
+                                        '%s' % self.name)
         if variable.scalar:
             if not (isinstance(item, slice) and item == slice(None)):
                 raise IndexError(('Illegal index for variable %s, it is a '
@@ -1163,7 +1173,8 @@ class VariableView(object):
 
             q = Quantity(value, copy=False)
             if len(q.shape):
-                if not len(q.shape) == 1 or len(q) != 1 and len(q) != len(indices):
+                if (not len(q.shape) == 1 or len(q) != 1 and
+                        len(q) != len(indices)):
                     raise ValueError(('Provided values do not match the size '
                                       'of the indices, '
                                       '%d != %d.') % (len(q),
@@ -1377,7 +1388,8 @@ class Variables(collections.Mapping):
 
         self._variables = {}
         #: A dictionary given the index name for every array name
-        self.indices = collections.defaultdict(functools.partial(str, default_index))
+        self.indices = collections.defaultdict(functools.partial(str,
+                                                                 default_index))
         # Note that by using functools.partial (instead of e.g. a lambda
         # function) above, this object remains pickable.
 
@@ -1468,11 +1480,12 @@ class Variables(collections.Mapping):
                 self.device.fill_with_array(var, values)
             else:
                 if len(values) != size:
-                    raise ValueError(('Size of the provided values does not match '
-                                      'size: %d != %d') % (len(values), size))
+                    raise ValueError(('Size of the provided values does not '
+                                      'match size: %d != %d') % (len(values),
+                                                                 size))
                 self.device.fill_with_array(var, values)
 
-    def add_arrays(self, names, unit, size, values=None, dtype=None,
+    def add_arrays(self, names, unit, size, dtype=None,
                   constant=False, read_only=False, scalar=False, unique=False,
                   index=None):
         '''
@@ -1536,9 +1549,9 @@ class Variables(collections.Mapping):
             Whether the variable's value is constant during a run.
             Defaults to ``False``.
         needs_reference_update : bool, optional
-            Whether the code objects need a new reference to the underlying data at
-            every time step. This should be set if the size of the array can be
-            changed by other code objects. Defaults to ``False``.
+            Whether the code objects need a new reference to the underlying data
+            at every time step. This should be set if the size of the array can
+            be changed by other code objects. Defaults to ``False``.
         scalar : bool, optional
             Whether this is a scalar variable. Defaults to ``False``, if set to
             ``True``, also implies that `size` equals 1.
@@ -1616,8 +1629,8 @@ class Variables(collections.Mapping):
         name : str
             The name of the variable
         unit : `Unit`
-            The unit of the variable. Note that the variable itself (as referenced
-            by value) should never have units attached.
+            The unit of the variable. Note that the variable itself (as
+            referenced by value) should never have units attached.
         value: reference to the variable value
             The value of the constant.
         '''
@@ -1699,11 +1712,12 @@ class Variables(collections.Mapping):
             elif index != self.default_index:
                 index_var = self._variables.get(index, None)
                 if isinstance(index_var, DynamicArrayVariable):
-                    raise TypeError(('Cannot link to subexpression %s: it refers '
-                                     'to the variable %s which is indexed with the '
-                                     'dynamic index %s.') % (name,
-                                                             identifier,
-                                                             subexpr_var_index))
+                    raise TypeError(('Cannot link to subexpression %s: it '
+                                     'refers to the variable %s which is '
+                                     'indexed with the dynamic index '
+                                     '%s.') % (name,
+                                               identifier,
+                                               subexpr_var_index))
             else:
                 self.add_reference(subexpr_var_index, group)
 

@@ -1,9 +1,6 @@
 """
 Clocks for the simulator.
 """
-
-__docformat__ = "restructuredtext en"
-
 import numpy as np
 
 from brian2.utils.logger import get_logger
@@ -21,7 +18,7 @@ logger = get_logger(__name__)
 class Clock(VariableOwner):
     '''
     An object that holds the simulation time and the time step.
-    
+
     Parameters
     ----------
     dt : float
@@ -57,8 +54,9 @@ class Clock(VariableOwner):
         self.variables.add_constant('N', unit=Unit(1), value=1)
         self._enable_group_attributes()
         self.dt = dt
-        logger.diagnostic("Created clock {name} with dt={dt}".format(name=self.name,
-                                                                     dt=self.dt))
+        logger.diagnostic(('Created clock {name} with'
+                           'dt={dt}').format(name=self.name,
+                                             dt=self.dt))
 
     @check_units(t=second)
     def _set_t_update_dt(self, target_t=0*second):
@@ -67,7 +65,8 @@ class Clock(VariableOwner):
         target_t = float(target_t)
         if new_dt != old_dt:
             self._new_dt = None  # i.e.: i is up-to-date for the dt
-            # Only allow a new dt which allows to correctly set the new time step
+            # Only allow a new dt which allows to correctly set the new time
+            # step
             if target_t != self.t_:
                 old_t = np.uint64(np.round(target_t / old_dt)) * old_dt
                 new_t = np.uint64(np.round(target_t / new_dt)) * new_dt
@@ -86,7 +85,8 @@ class Clock(VariableOwner):
 
         new_i = np.uint64(np.round(target_t/new_dt))
         new_t = new_i*new_dt
-        if new_t==target_t or np.abs(new_t-target_t)<=self.epsilon*np.abs(new_t):
+        if (new_t == target_t or
+                    np.abs(new_t-target_t) <= self.epsilon*np.abs(new_t)):
             new_timestep = new_i
         else:
             new_timestep = np.uint64(np.ceil(target_t/new_dt))
@@ -94,9 +94,10 @@ class Clock(VariableOwner):
         # update them via the variables object directly
         self.variables['timestep'].set_value(new_timestep)
         self.variables['t'].set_value(new_timestep * new_dt)
-        logger.diagnostic("Setting Clock {name} to t={t}, dt={dt}".format(name=self.name,
-                                                                          t=self.t,
-                                                                          dt=self.dt))
+        logger.diagnostic(('Setting Clock {name} to t={t}, '
+                           'dt={dt}').format(name=self.name,
+                                             t=self.t,
+                                             dt=self.dt))
 
     def __repr__(self):
         return 'Clock(dt=%r, name=%r)' % (self.dt, self.name)
@@ -117,27 +118,27 @@ class Clock(VariableOwner):
 
     dt = property(fget=lambda self: Quantity(self.dt_, dim=second.dim),
                   fset=_set_dt,
-                  doc='''The time step of the simulation in seconds.''',
-                  )
+                  doc='The time step of the simulation in seconds.')
     dt_ = property(fget=_get_dt_, fset=_set_dt_,
-                   doc='''The time step of the simulation as a float (in seconds)''')
+                   doc='The time step of the simulation as a float (in '
+                       'seconds)')
 
     @check_units(start=second, end=second)
     def set_interval(self, start, end):
         '''
         set_interval(self, start, end)
-        
+
         Set the start and end time of the simulation.
-        
+
         Sets the start and end value of the clock precisely if
         possible (using epsilon) or rounding up if not. This assures that
-        multiple calls to `Network.run` will not re-run the same time step.      
+        multiple calls to `Network.run` will not re-run the same time step.
         '''
         self._set_t_update_dt(target_t=start)
         end = float(end)
         i_end = np.uint64(np.round(end/self.dt_))
         t_end = i_end*self.dt_
-        if t_end==end or np.abs(t_end-end)<=self.epsilon*np.abs(t_end):
+        if t_end == end or np.abs(t_end-end) <= self.epsilon*np.abs(t_end):
             self._i_end = i_end
         else:
             self._i_end = np.uint64(np.ceil(end/self.dt_))

@@ -1,3 +1,7 @@
+"""
+Module implementing Brian's "magic" functionality, i.e. the ability to collect
+all Brian objects in the current scope and run a simulation based on them.
+"""
 import weakref
 import inspect
 import itertools
@@ -8,7 +12,7 @@ from brian2.units.allunits import second
 from brian2.utils.logger import get_logger
 
 from .network import Network
-from .base import BrianObject, device_override    
+from .base import BrianObject
 
 __all__ = ['MagicNetwork', 'magic_network',
            'MagicError',
@@ -44,7 +48,7 @@ def _get_contained_objects(obj):
 
 
 def get_objects_in_namespace(level):
-    '''
+    r'''
     Get all the objects in the current namespace that derive from `BrianObject`.
     Used to determine the objects for the `MagicNetwork`.
 
@@ -63,7 +67,7 @@ def get_objects_in_namespace(level):
     # Get the locals and globals from the stack frame
     objects = set()
     frame = inspect.stack()[level + 1][0]
-    for k, v in itertools.chain(frame.f_globals.iteritems(),
+    for _, v in itertools.chain(frame.f_globals.iteritems(),
                                 frame.f_locals.iteritems()):
         # We are only interested in numbers and functions, not in
         # everything else (classes, modules, etc.)
@@ -76,7 +80,7 @@ def get_objects_in_namespace(level):
 class MagicError(Exception):
     '''
     Error that is raised when something goes wrong in `MagicNetwork`
-    
+
     See notes to `MagicNetwork` for more details.
     '''
     pass
@@ -85,39 +89,39 @@ class MagicError(Exception):
 class MagicNetwork(Network):
     '''
     `Network` that automatically adds all Brian objects
-    
+
     In order to avoid bugs, this class will occasionally raise
     `MagicError` when the intent of the user is not clear. See the notes
     below for more details on this point. If you persistently see this
     error, then Brian is not able to safely guess what you intend to do, and
     you should use a `Network` object and call `Network.run` explicitly.
-    
+
     Note that this class cannot be instantiated by the user, there can be only
     one instance `magic_network` of `MagicNetwork`.
 
     Notes
     -----
-    
+
     All Brian objects that are visible at the point of the `run` call will be
     included in the network. This class is designed to work in the following
     two major use cases:
-    
+
     1. You create a collection of Brian objects, and call `run` to run the
        simulation. Subsequently, you may call `run` again to run it again for
        a further duration. In this case, the `Network.t` time will start at 0
        and for the second call to `run` will continue from the end of the
        previous run.
-       
+
     2. You have a loop in which at each iteration, you create some Brian
        objects and run a simulation using them. In this case, time is reset to
        0 for each call to `run`.
-       
+
     In any other case, you will have to explicitly create a `Network` object
     yourself and call `Network.run` on this object. Brian has a built in
     system to guess which of the cases above applies and behave correctly.
     When it is not possible to safely guess which case you are in, it raises
     `MagicError`. The rules for this guessing system are explained below.
-    
+
     If a simulation consists only of objects that have not been run, it will
     assume that you want to start a new simulation. If a simulation only
     consists of objects that have been simulated in the previous `run` call,
@@ -129,23 +133,22 @@ class MagicNetwork(Network):
     In these checks, "non-invalidating" objects (i.e. objects that have
     `BrianObject.invalidates_magic_network` set to ``False``) are ignored, e.g.
     creating new monitors is always possible.
-    
+
     See Also
     --------
     Network, collect, run, stop, store, restore
     '''
-    
     _already_created = False
-    
+
     def __init__(self):
         if MagicNetwork._already_created:
             raise ValueError("There can be only one MagicNetwork.")
         MagicNetwork._already_created = True
-        
+
         super(MagicNetwork, self).__init__(name='magicnetwork*')
-        
+
         self._previous_refs = set()
-        
+
     def add(self, *objs):
         '''
         You cannot add objects directly to `MagicNetwork`
@@ -200,10 +203,11 @@ class MagicNetwork(Network):
 
         self.objects[:] = objects
         logger.debug("Updated MagicNetwork to include {numobjs} objects "
-                     "with names {names}".format(
-                numobjs=len(self.objects),
-                names=', '.join(obj.name for obj in self.objects)),
-                name_suffix='magic_objects')
+                     "with names {names}".format(numobjs=len(self.objects),
+                                                 names=', '.join(obj.name
+                                                                 for obj in
+                                                                 self.objects)),
+                     name_suffix='magic_objects')
 
     def check_dependencies(self):
         all_ids = set([obj.id for obj in self.objects])
@@ -247,14 +251,16 @@ class MagicNetwork(Network):
         self.objects[:] = []
 
     def get_states(self, units=True, format='dict', subexpressions=False,
-                   level=0):
+                   read_only_variables=True, level=0):
         '''
         See `Network.get_states`.
         '''
         self._update_magic_objects(level=level+1)
-        states = super(MagicNetwork, self).get_states(units, format,
-                                                      subexpressions,
-                                                      level=level+1)
+        net = super(MagicNetwork, self)
+        states = net.get_states(units, format,
+                                subexpressions=subexpressions,
+                                read_only_variables=read_only_variables,
+                                level=level+1)
         self.objects[:] = []
         return states
 
@@ -277,7 +283,7 @@ magic_network = MagicNetwork()
 
 
 def collect(level=0):
-    '''
+    r'''
     Return the list of `BrianObject`\ s that will be simulated if `run` is
     called.
 
@@ -299,7 +305,7 @@ def collect(level=0):
         if obj.add_to_magic_network:
             gk = BrianObject._scope_current_key
             k = obj._scope_key
-            if gk!=k:
+            if gk != k:
                 continue
             all_objects.add(obj)
     return all_objects
@@ -310,20 +316,19 @@ def run(duration, report=None, report_period=10*second, namespace=None,
         profile=True, level=0):
     '''
     run(duration, report=None, report_period=10*second, namespace=None, level=0)
-    
+
     Runs a simulation with all "visible" Brian objects for the given duration.
     Calls `collect` to gather all the objects, the simulation can
     be stopped by calling the global `stop` function.
-    
+
     In order to avoid bugs, this function will occasionally raise
     `MagicError` when the intent of the user is not clear. See the notes to
     `MagicNetwork` for more details on this point. If you persistently see this
     error, then Brian is not able to safely guess what you intend to do, and
     you should use a `Network` object and call `Network.run` explicitly.
-    
+
     Parameters
     ----------
-    
     duration : `Quantity`
         The amount of simulation time to run for. If the network consists of
         new objects since the last time `run` was called, the start time will
@@ -331,7 +336,7 @@ def run(duration, report=None, report_period=10*second, namespace=None,
         set of objects, the second and subsequent runs will start from the
         end time of the previous run. To explicitly reset the time to 0,
         do ``magic_network.t = 0*second``.
-    report : {None, 'stdout', 'stderr', 'graphical', function}, optional
+    report : {None, 'stdout', 'stderr', 'graphical', callable}
         How to report the progress of the simulation. If None, do not
         report progress. If stdout or stderr is specified, print the
         progress to stdout or stderr. If graphical, Tkinter is used to
@@ -357,18 +362,18 @@ def run(duration, report=None, report_period=10*second, namespace=None,
 
     See Also
     --------
-    
     Network.run, MagicNetwork, collect, reinit, stop, clear
-    
+
     Raises
     ------
-    
     MagicError
         Error raised when it was not possible for Brian to safely guess the
         intended use. See `MagicNetwork` for more details.
     '''
-    return magic_network.run(duration, report=report, report_period=report_period,
-                             namespace=namespace, profile=profile, level=2+level)
+    return magic_network.run(duration, report=report,
+                             report_period=report_period,
+                             namespace=namespace, profile=profile,
+                             level=2+level)
 run.__module__ = __name__
 
 
@@ -416,10 +421,10 @@ def restore(name='default', filename=None):
 def stop():
     '''
     Stops all running simulations.
-    
+
     See Also
     --------
-    
+
     Network.stop, run, reinit
     '''
     Network._globally_stopped = True
@@ -428,7 +433,7 @@ def stop():
 def start_scope():
     '''
     Starts a new scope for magic functions
-    
+
     All objects created before this call will no longer be automatically
     included by the magic functions such as `run`.
     '''

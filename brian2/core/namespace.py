@@ -4,17 +4,11 @@ model equations of `NeuronGroup` and `Synapses`
 '''
 import inspect
 import itertools
-import numbers
-import weakref
-
-import numpy as np
 
 from brian2.utils.logger import get_logger
 from brian2.units.fundamentalunits import standard_unit_register
 from brian2.units.stdunits import stdunits
 from brian2.core.functions import DEFAULT_FUNCTIONS, DEFAULT_CONSTANTS
-
-from .functions import Function
 
 __all__ = ['get_local_namespace',
            'DEFAULT_FUNCTIONS',
@@ -55,12 +49,12 @@ def _get_default_unit_namespace():
     Return the namespace that is used by default for looking up units when
     defining equations. Contains all registered units and everything from
     `brian2.units.stdunits` (ms, mV, nS, etc.).
-    
+
     Returns
     -------
     namespace : dict
         The unit namespace
-    '''    
+    '''
     namespace = dict([(u.name, u) for u in standard_unit_register.units])
     namespace.update(stdunits)
     return namespace

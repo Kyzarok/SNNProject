@@ -1,3 +1,8 @@
+"""
+Module handling the automatic naming system for objects (e.g. a `NeuronGroup`
+will have the name ``neurongroup``, the second one will be called
+``neurongroup_1``, etc.)
+"""
 import uuid
 import re
 
@@ -28,22 +33,22 @@ def find_name(name):
 
     # Name is already taken, try _1, _2, etc.
     i = 1
-    while name+'_'+str(i) in allnames:
+    while name + '_'+str(i) in allnames:
         i += 1
-    return name+'_'+str(i)
+    return name + '_'+str(i)
 
 
 class Nameable(Trackable):
     '''
     Base class to find a unique name for an object
-    
+
     If you specify a name explicitly, and it has already been taken, a
     `ValueError` is raised. You can also specify a name with a wildcard asterisk
     in the end, i.e. in the form ``'name*'``. It will then try ``name`` first
     but if this is already specified, it will try ``name_1``, `name__2``, etc.
     This is the default mechanism used by most core objects in Brian, e.g.
     `NeuronGroup` uses a default name of ``'neurongroup*'``.
-    
+
     Parameters
     ----------
     name : str
@@ -54,12 +59,12 @@ class Nameable(Trackable):
         the `name` argument. This situation can arise when a class derives from
         multiple classes that derive themselves from `Nameable` (e.g. `Group`
         and `CodeRunner`) and their initialisers are called explicitely.
-        
+
     Raises
     ------
     ValueError
         If the name is already taken.
-    '''    
+    '''
     def __init__(self, name):
         if getattr(self, '_name', None) is not None and name is None:
             # name has already been specified previously
@@ -74,7 +79,9 @@ class Nameable(Trackable):
             raise ValueError("Name %s not valid variable name" % name)
 
         self._name = find_name(name)
-        logger.diagnostic("Created object of class "+self.__class__.__name__+" with name "+self._name)
+        logger.diagnostic('Created object of class %s with name '
+                          '%s' % (self.__class__.__name__,
+                                  self._name))
 
     def assign_id(self):
         '''
@@ -85,31 +92,22 @@ class Nameable(Trackable):
         '''
         self._id = uuid.uuid4()
 
-    name = property(fget=lambda self:self._name,
+    name = property(fget=lambda self: self._name,
                     doc='''
                         The unique name for this object.
-                        
+
                         Used when generating code. Should be an acceptable
                         variable name, i.e. starting with a letter
                         character and followed by alphanumeric characters and
                         ``_``.
                         ''')
 
-    id = property(fget=lambda self:self._id,
+    id = property(fget=lambda self: self._id,
                   doc='''
-                        A unique id for this object.
+                      A unique id for this object.
 
-                        In contrast to names, which may be reused, the id stays
-                        unique. This is used in the dependency checking to not
-                        have to deal with the chore of comparing weak
-                        references, weak proxies and strong references.
-                        ''')
-
-    
-if __name__=='__main__':
-    from brian2 import *
-    from brian2.core.names import Nameable
-    nam = Nameable('nameable')
-    obj = BrianObject(name='object*')
-    obj2 = BrianObject(name='object*')
-    print nam.name, obj.name, obj2.name
+                      In contrast to names, which may be reused, the id stays
+                      unique. This is used in the dependency checking to not
+                      have to deal with the chore of comparing weak
+                      references, weak proxies and strong references.
+                      ''')

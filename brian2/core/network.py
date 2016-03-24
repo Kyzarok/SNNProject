@@ -19,7 +19,7 @@ from brian2.core.base import BrianObject, brian_object_exception
 from brian2.core.clocks import Clock
 from brian2.devices.device import device
 from brian2.units.fundamentalunits import check_units, Quantity
-from brian2.units.allunits import second, msecond 
+from brian2.units.allunits import second, msecond
 from brian2.core.preferences import prefs, BrianPreference
 from brian2.core.namespace import get_local_namespace
 from .base import device_override
@@ -100,14 +100,16 @@ class TextReport(object):
             self.stream.write(('Starting simulation at t=%s for a duration of '
                                '%s\n') % (start, duration))
         else:
+            real_t = _format_time(float(elapsed))
             report_msg = ('{t} ({percent}%) simulated in '
                           '{real_t}').format(t=completed*duration,
                                              percent=int(completed*100.),
-                                             real_t=_format_time(float(elapsed)))
+                                             real_t=real_t)
             if completed < 1.0:
-                remaining = int(round((1-completed)/completed*float(elapsed)))
+                remaining = _format_time(int(round((1-completed)/completed*
+                                                   float(elapsed))))
                 remaining_msg = (', estimated {remaining} '
-                                 'remaining.\n').format(remaining=_format_time(remaining))
+                                 'remaining.\n').format(remaining=remaining)
             else:
                 remaining_msg = '\n'
 
@@ -120,7 +122,7 @@ class TextReport(object):
 class Network(Nameable):
     '''
     Network(*objs, name='network*')
-    
+
     The main simulation controller in Brian
 
     `Network` handles the running of a simulation. It contains a set of Brian
@@ -129,10 +131,10 @@ class Network(Nameable):
     objects get called in what order is described in detail in the notes below.
     The objects in the `Network` are accesible via their names, e.g.
     `net['neurongroup']` would return the `NeuronGroup` with this name.
-    
+
     Parameters
     ----------
-    objs : (`BrianObject`, container), optional
+    objs : `BrianObject`, container, optional
         A list of objects to be added to the `Network` immediately, see
         `~Network.add`.
     name : str, optional
@@ -140,9 +142,8 @@ class Network(Nameable):
 
     Notes
     -----
-    
     The main run loop performs the following steps:
-    
+
     1. Prepare the objects if necessary, see `~Network.prepare`.
     2. Determine the end time of the simulation as `~Network.t`+``duration``.
     3. Determine which set of clocks to update. This will be the clock with the
@@ -153,13 +154,13 @@ class Network(Nameable):
        simulation, stop running. If the `Network.stop` method or the
        `stop` function have been called, stop running. Set `~Network.t` to the
        end time of the simulation.
-    5. For each object whose `~BrianObject.clock` is set to one of the clocks from the
-       previous steps, call the `~BrianObject.update` method. This method will
-       not be called if the `~BrianObject.active` flag is set to ``False``.
-       The order in which the objects are called is described below.
+    5. For each object whose `~BrianObject.clock` is set to one of the clocks
+       from the previous steps, call the `~BrianObject.update` method. This
+       method will not be called if the `~BrianObject.active` flag is set to
+       ``False``. The order in which the objects are called is described below.
     6. Increase `Clock.t` by `Clock.dt` for each of the clocks and return to
-       step 2. 
-    
+       step 2.
+
     The order in which the objects are updated in step 4 is determined by
     the `Network.schedule` and the objects `~BrianObject.when` and
     `~BrianObject.order` attributes. The `~Network.schedule` is a list of
@@ -174,10 +175,9 @@ class Network(Nameable):
     ``when=='before_groups'``, ``when=='groups'`` and so forth. If several
     objects have the same `~BrianObject.when` attribute, then the order is
     determined by the `~BrianObject.order` attribute (lower first).
-    
+
     See Also
     --------
-    
     MagicNetwork, run, stop
     '''
 
@@ -188,7 +188,7 @@ class Network(Nameable):
         #: objects during a run: it is filled in `before_run` and emptied in
         #: `after_run`
         self.objects = []
-        
+
         name = kwds.pop('name', 'network*')
 
         if kwds:
@@ -209,8 +209,10 @@ class Network(Nameable):
         self._profiling_info = None
 
         self._schedule = None
-     
-    t = property(fget=lambda self: Quantity(self.t_, dim=second.dim, copy=False),
+
+    t = property(fget=lambda self: Quantity(self.t_,
+                                            dim=second.dim,
+                                            copy=False),
                  doc='''
                      Current simulation time in seconds (`Quantity`)
                      ''')
@@ -229,7 +231,7 @@ class Network(Nameable):
 
     @property
     def profiling_info(self):
-        '''
+        r'''
         The time spent in executing the various `CodeObject`\ s.
 
         A list of ``(name, time)`` tuples, containing the name of the
@@ -281,11 +283,10 @@ class Network(Nameable):
     def add(self, *objs):
         """
         Add objects to the `Network`
-        
+
         Parameters
         ----------
-        
-        objs : (`BrianObject`, container)
+        objs : `BrianObject`, container
             The `BrianObject` or container of Brian objects to be added. Specify
             multiple objects, or lists (or other containers) of objects.
             Containers will be added recursively. If the container is a `dict`
@@ -311,26 +312,27 @@ class Network(Nameable):
                 else:
                     try:
                         for o in obj:
-                            # The following "if" looks silly but avoids an infinite
-                            # recursion if a string is provided as an argument
-                            # (which might occur during testing)
+                            # The following "if" looks silly but avoids an
+                            # infinite recursion if a string is provided as an
+                            # argument (which might occur during testing)
                             if o is obj:
                                 raise TypeError()
                             self.add(o)
                     except TypeError:
-                        raise TypeError("Can only add objects of type BrianObject, "
-                                        "or containers of such objects to Network")
+                        raise TypeError('Can only add objects of type '
+                                        'BrianObject, or containers of such '
+                                        'objects to Network')
 
     def remove(self, *objs):
         '''
         Remove an object or sequence of objects from a `Network`.
-        
+
         Parameters
         ----------
-        
-        objs : (`BrianObject`, container)
-            The `BrianObject` or container of Brian objects to be removed. Specify
-            multiple objects, or lists (or other containers) of objects.
+
+        objs : `BrianObject`, container
+            The `BrianObject` or container of Brian objects to be removed.
+            Specify multiple objects, or lists (or other containers) of objects.
             Containers will be removed recursively.
         '''
         for obj in objs:
@@ -342,9 +344,9 @@ class Network(Nameable):
                     for o in obj:
                         self.remove(o)
                 except TypeError:
-                    raise TypeError("Can only remove objects of type "
-                                    "BrianObject, or containers of such "
-                                    "objects from Network")
+                    raise TypeError('Can only remove objects of type '
+                                    'BrianObject, or containers of such '
+                                    'objects from Network')
 
     def _full_state(self):
         state = {}
@@ -501,11 +503,13 @@ class Network(Nameable):
         states = dict()
         for obj in self.objects:
             if hasattr(obj, 'get_states'):
-                states[obj.name] = obj.get_states(vars=None, units=units,
-                                                  format=format,
-                                                  subexpressions=subexpressions,
-                                                  read_only_variables=read_only_variables,
-                                                  level=level+1)
+                obj_states = obj.get_states(vars=None, units=units,
+                                            format=format,
+                                            subexpressions=subexpressions,
+                                            read_only_variables=read_only_variables,
+                                            level=level + 1)
+
+                states[obj.name] = obj_states
         return states
 
     def set_states(self, values, units=True, format='dict', level=0):
@@ -533,18 +537,17 @@ class Network(Nameable):
         # be made into an extensible system, see github issue #306
         for obj_name, obj_values in values.iteritems():
             if obj_name not in self:
-                raise KeyError(("Network does not include a network with "
-                                "name '%s'.") % obj_name)
+                raise KeyError(('Network does not include a network with '
+                                'name \'%s\'.') % obj_name)
             self[obj_name].set_states(obj_values, units=units, format=format,
-                                     level=level+1)
-
+                                      level=level+1)
 
     def _get_schedule(self):
         if self._schedule is None:
             return list(prefs.core.network.default_schedule)
         else:
             return list(self._schedule)
-    
+
     def _set_schedule(self, schedule):
         if schedule is None:
             self._schedule = None
@@ -565,12 +568,13 @@ class Network(Nameable):
             logger.debug("Setting network {self.name} schedule to "
                          "{self._schedule}".format(self=self),
                          "_set_schedule")
-    
+
     schedule = property(fget=_get_schedule,
                         fset=_set_schedule,
                         doc='''
-        List of ``when`` slots in the order they will be updated, can be modified.
-        
+        List of ``when`` slots in the order they will be updated, can be
+        modified.
+
         See notes on scheduling in `Network`. Note that additional ``when``
         slots can be added, but the schedule should contain at least all of the
         names in the default schedule:
@@ -583,7 +587,7 @@ class Network(Nameable):
     def _sort_objects(self):
         '''
         Sorts the objects in the order defined by the schedule.
-        
+
         Objects are sorted first by their ``when`` attribute, and secondly
         by the ``order`` attribute. The order of the ``when`` attribute is
         defined by the ``schedule``. In addition to the slot names defined in
@@ -612,7 +616,7 @@ class Network(Nameable):
         all_ids = [obj.id for obj in self.objects]
         for obj in self.objects:
             for dependency in obj._dependencies:
-                if not dependency in all_ids:
+                if dependency not in all_ids:
                     raise ValueError(('"%s" has been included in the network '
                                       'but not the object on which it '
                                       'depends.') % obj.name)
@@ -623,7 +627,7 @@ class Network(Nameable):
         before_run(namespace)
 
         Prepares the `Network` for a run.
-        
+
         Objects in the `Network` are sorted into the correct running order, and
         their `BrianObject.before_run` methods are called.
 
@@ -685,7 +689,9 @@ class Network(Nameable):
                 try:
                     obj.before_run(run_namespace)
                 except Exception as ex:
-                    raise brian_object_exception("An error occurred when preparing an object.", obj, ex)
+                    raise brian_object_exception('An error occurred when '
+                                                 'preparing an object.',
+                                                 obj, ex)
 
         # Check that no object has been run as part of another network before
         for obj in self.objects:
@@ -698,13 +704,14 @@ class Network(Nameable):
                                     'in a simulated network instead of '
                                     'creating a new one.') % obj.name)
 
-        logger.debug("Network {self.name} uses {num} "
-                     "clocks: {clocknames}".format(self=self,
-                        num=len(self._clocks),
-                        clocknames=', '.join('%s (dt=%s)' % (obj.name, obj.dt)
-                                             for obj in self._clocks)),
+        clocknames = ', '.join('%s (dt=%s)' % (obj.name, obj.dt)
+                               for obj in self._clocks)
+        logger.debug('Network {self.name} uses {num} clocks: '
+                     '{clocknames}'.format(self=self,
+                                           num=len(self._clocks),
+                                           clocknames=clocknames),
                      "before_run")
-    
+
     @device_override('network_after_run')
     def after_run(self):
         '''
@@ -713,7 +720,7 @@ class Network(Nameable):
         for obj in self.objects:
             if obj.active:
                 obj.after_run()
-        
+
     def _nextclocks(self):
         clocks_times = [(c, self._clock_variables[c][1][0])
                         for c in self._clocks]
@@ -729,9 +736,9 @@ class Network(Nameable):
             namespace=None, profile=True, level=0):
         '''
         run(duration, report=None, report_period=60*second, namespace=None, level=0)
-        
+
         Runs the simulation for the given duration.
-        
+
         Parameters
         ----------
         duration : `Quantity`
@@ -785,7 +792,7 @@ class Network(Nameable):
 
         self.before_run(namespace)
 
-        if len(self.objects)==0:
+        if len(self.objects) == 0:
             return  # TODO: raise an error? warning?
 
         # Find the first clock to be updated (see note below)
@@ -849,11 +856,13 @@ class Network(Nameable):
 
             # find the next clocks to be updated. The < operator for Clock
             # determines that the first clock to be updated should be the one
-            # with the smallest t value, unless there are several with the 
+            # with the smallest t value, unless there are several with the
             # same t value in which case we update all of them
             clock, curclocks = self._nextclocks()
-
-            if device._maximum_run_time is not None and time.time()-start_time>float(device._maximum_run_time):
+            max_run_time = (float(device._maximum_run_time)
+                            if device._maximum_run_time is not None
+                            else float('inf'))
+            if time.time() - start_time > max_run_time:
                 self._stopped = True
             else:
                 timestep, _, _ = self._clock_variables[clock]
@@ -865,18 +874,19 @@ class Network(Nameable):
         else:
             self.t_ = float(t_end)
 
-        device._last_run_time = end_time-start_time
-        if duration>0:
-            device._last_run_completed_fraction = (self.t-t_start)/duration
+        device._last_run_time = end_time - start_time
+        if duration > 0:
+            device._last_run_completed_fraction = (self.t - t_start)/duration
         else:
             device._last_run_completed_fraction = 1.0
 
         if report is not None:
-            report_callback((end_time-start_time)*second, 1.0, t_start, duration)
+            report_callback((end_time-start_time)*second,
+                            1.0, t_start, duration)
         self.after_run()
 
-        logger.debug(("Finished simulating network '%s' "
-                      "(took %.2fs)") % (self.name, end_time-start_time),
+        logger.debug(('Finished simulating network %s '
+                      '(took %.2fs)') % (self.name, end_time-start_time),
                      'run')
         # Store profiling info (or erase old info to avoid confusion)
         if profile:
@@ -892,14 +902,16 @@ class Network(Nameable):
         '''
         stop()
 
-        Stops the network from running, this is reset the next time `Network.run` is called.
+        Stops the network from running, this is reset the next time
+        `Network.run` is called.
         '''
         self._stopped = True
 
     def __repr__(self):
-        return '<%s at time t=%s, containing objects: %s>' % (self.__class__.__name__,
-                                                              str(self.t),
-                                                              ', '.join((obj.__repr__() for obj in self.objects)))
+        return ('<%s at time t=%s, containing objects: '
+                '%s>') % (self.__class__.__name__,
+                          str(self.t),
+                          ', '.join((obj.__repr__() for obj in self.objects)))
 
 
 class ProfilingSummary(object):
@@ -930,12 +942,12 @@ class ProfilingSummary(object):
             times = [0*second]
         self.total_time = sum(times)
         self.time_unit = msecond
-        if self.total_time>1*second:
+        if self.total_time > 1*second:
             self.time_unit = second
         if show is not None:
             names = names[:show]
             times = times[:show]
-        if self.total_time>0*second:
+        if self.total_time > 0*second:
             self.percentages = [100.0*time/self.total_time for time in times]
         else:
             self.percentages = [0. for _ in times]
@@ -944,12 +956,16 @@ class ProfilingSummary(object):
         self.times = times
 
     def __repr__(self):
-        times = ['%.2f %s' % (time/self.time_unit, self.time_unit) for time in self.times]
+        times = ['%.2f %s' % (time/self.time_unit, self.time_unit)
+                 for time in self.times]
         times_maxlen = max(len(time) for time in times)
         times = [' '*(times_maxlen-len(time))+time for time in times]
-        percentages = ['%.2f %%' % percentage for percentage in self.percentages]
-        percentages_maxlen = max(len(percentage) for percentage in percentages)
-        percentages = [(' '*(percentages_maxlen-len(percentage)))+percentage for percentage in percentages]
+        percentages = ['%.2f %%' % percentage
+                       for percentage in self.percentages]
+        percentages_maxlen = max(len(percentage)
+                                 for percentage in percentages)
+        percentages = [(' '*(percentages_maxlen-len(percentage)))+percentage
+                       for percentage in percentages]
 
         s = 'Profiling summary'
         s += '\n'+'='*len(s)+'\n'
@@ -958,8 +974,10 @@ class ProfilingSummary(object):
         return s
 
     def _repr_html_(self):
-        times = ['%.2f %s' % (time/self.time_unit, self.time_unit) for time in self.times]
-        percentages = ['%.2f %%' % percentage for percentage in self.percentages]
+        times = ['%.2f %s' % (time/self.time_unit, self.time_unit)
+                 for time in self.times]
+        percentages = ['%.2f %%' % percentage
+                       for percentage in self.percentages]
         s = '<h2 class="brian_prof_summary_header">Profiling summary</h2>\n'
         s += '<table class="brian_prof_summary_table">\n'
         for name, time, percentage in zip(self.names, times, percentages):
@@ -982,9 +1000,9 @@ def profiling_summary(net=None, show=None):
     Parameters
     ----------
 
-    net : {`Network`, None} optional
+    net : `Network`, optional
         The `Network` object to profile, or `magic_network` if not specified.
-    show : int
+    show : int, optional
         The number of results to show (the longest results will be shown). If
         not specified, all results will be shown.
     '''

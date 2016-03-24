@@ -3,8 +3,8 @@ import inspect
 import types
 
 import numpy as np
-import sympy
 from numpy.random import randn, rand
+import sympy
 from sympy import Function as sympy_Function
 
 import brian2.units.unitsafefunctions as unitsafe
@@ -43,20 +43,24 @@ def declare_types(**types):
         for name in arg_names:
             arg_type = types.get(name, 'any')
             if arg_type not in VALID_ARG_TYPES:
-                raise ValueError("Argument type %s is not valid, must be one of %s, "
-                                 "for argument %s" % (arg_type, VALID_ARG_TYPES, name))
+                raise ValueError('Argument type %s is not valid, must be one of '
+                                 '%s, for argument %s' % (arg_type,
+                                                          VALID_ARG_TYPES,
+                                                          name))
             argtypes.append(arg_type)
         for n in types.keys():
-            if n not in arg_names and n!='result':
-                raise ValueError("Type specified for unknown argument "+n)
+            if n not in arg_names and n != 'result':
+                raise ValueError('Type specified for unknown argument ' + n)
         return_type = types.get('result', 'float')
         if return_type not in VALID_RETURN_TYPES:
-            raise ValueError("Result type %s is not valid, "
-                             "must be one of %s" % (return_type, VALID_RETURN_TYPES))
+            raise ValueError('Result type %s is not valid, '
+                             'must be one of %s' % (return_type,
+                                                    VALID_RETURN_TYPES))
         f._arg_types = argtypes
         f._return_type = return_type
         f._orig_arg_names = arg_names
-        f._annotation_attributes = getattr(f, '_annotation_attributes', [])+['_arg_types', '_return_type']
+        f._annotation_attributes = (getattr(f, '_annotation_attributes', []) +
+                                    ['_arg_types', '_return_type'])
         return f
     return annotate_function_with_types
 
@@ -163,15 +167,21 @@ class Function(object):
             self._return_type = getattr(pyfunc, '_return_type', 'float')
 
         for argtype, u in zip(self._arg_types, self._arg_units):
-            if argtype!='float' and argtype!='any' and u is not None and not is_dimensionless(u):
-                raise TypeError("Non-float arguments must be dimensionless in function "+pyfunc.__name__)
+            if (argtype != 'float' and argtype != 'any' and
+                        u is not None and not is_dimensionless(u)):
+                raise TypeError('Non-float arguments must be dimensionless in '
+                                'function ' + pyfunc.__name__)
             if argtype not in VALID_ARG_TYPES:
-                raise ValueError("Argument type %s is not valid, must be one of %s, "
-                                 "in function %s" % (argtype, VALID_ARG_TYPES, pyfunc.__name__))
+                raise ValueError('Argument type %s is not valid, must be one of'
+                                 '%s, in function %s' % (argtype,
+                                                         VALID_ARG_TYPES,
+                                                         pyfunc.__name__))
 
         if self._return_type not in VALID_RETURN_TYPES:
-                raise ValueError("Return type %s is not valid, must be one of %s, "
-                                 "in function %s" % (self._return_type, VALID_RETURN_TYPES, pyfunc.__name__))
+            raise ValueError('Return type %s is not valid, must be one of '
+                             '%s, in function %s' % (self._return_type,
+                                                     VALID_RETURN_TYPES,
+                                                     pyfunc.__name__))
 
         #: Stores implementations for this function in a
         #: `FunctionImplementationContainer`
@@ -249,8 +259,8 @@ class FunctionImplementation(object):
 class FunctionImplementationContainer(collections.Mapping):
     '''
     Helper object to store implementations and give access in a dictionary-like
-    fashion, using `CodeGenerator` implementations as a fallback for `CodeObject`
-    implementations.
+    fashion, using `CodeGenerator` implementations as a fallback for
+    `CodeObject` implementations.
     '''
     def __init__(self, function):
         self._function = function
@@ -307,10 +317,9 @@ class FunctionImplementationContainer(collections.Mapping):
 
         Parameters
         ----------
-        function : `Function`
-            The function description for which an implementation should be added.
         wrapped_func : callable
-            The original function (that will be used for the numpy implementation)
+            The original function (that will be used for the numpy
+            implementation)
         dependencies : list of `Function`, optional
             A list of functions this function needs.
         discard_units : bool, optional
@@ -320,7 +329,7 @@ class FunctionImplementationContainer(collections.Mapping):
             discard_units = prefs['codegen.runtime.numpy.discard_units']
 
         # Get the original function inside the check_units decorator
-        if hasattr(wrapped_func,  '_orig_func'):
+        if hasattr(wrapped_func, '_orig_func'):
             orig_func = wrapped_func._orig_func
         else:
             orig_func = wrapped_func
@@ -335,17 +344,22 @@ class FunctionImplementationContainer(collections.Mapping):
                                                orig_func.func_name,
                                                orig_func.func_defaults,
                                                orig_func.func_closure)
-            self._implementations['numpy'] = FunctionImplementation(name=None,
-                                                                    code=unitless_func,
-                                                                    dependencies=dependencies)
+            impl = FunctionImplementation(name=None,
+                                          code=unitless_func,
+                                          dependencies=dependencies)
+            self._implementations['numpy'] = impl
         else:
             def wrapper_function(*args):
                 if not len(args) == len(self._function._arg_units):
-                    raise ValueError(('Function %s got %d arguments, '
-                                      'expected %d') % (self._function.pyfunc.__name__, len(args),
-                                                        len(self._function._arg_units)))
-                new_args = [Quantity.with_dimensions(arg, get_dimensions(arg_unit))
-                            for arg, arg_unit in zip(args, self._function._arg_units)]
+                    error_msg = ('Function %s got %d arguments, expected '
+                                 '%d') % (self._function.pyfunc.__name__,
+                                          len(args),
+                                          len(self._function._arg_units))
+                    raise ValueError(error_msg)
+                new_args = [Quantity.with_dimensions(arg,
+                                                     get_dimensions(arg_unit))
+                            for arg, arg_unit in zip(args,
+                                                     self._function._arg_units)]
                 result = orig_func(*new_args)
                 return_unit = self._function._return_unit
                 if return_unit is 1 or return_unit.dim is DIMENSIONLESS:
@@ -362,21 +376,25 @@ class FunctionImplementationContainer(collections.Mapping):
                                                 ('The function %s returned '
                                                  '{value}, but it was expected '
                                                  'to return a quantity with '
-                                                 'units %r') % (orig_func.__name__,
-                                                                return_unit),
+                                                 'units '
+                                                 '%r') % (orig_func.__name__,
+                                                          return_unit),
                                                 value=result)
                 return np.asarray(result)
 
-            self._implementations['numpy'] = FunctionImplementation(name=None,
-                                                                    code=wrapper_function,
-                                                                    dependencies=dependencies)
+            impl = FunctionImplementation(name=None,
+                                          code=wrapper_function,
+                                          dependencies=dependencies)
+            self._implementations['numpy'] = impl
 
     def add_implementation(self, target, code, namespace=None,
                            dependencies=None, name=None):
-        self._implementations[target] = FunctionImplementation(name=name,
-                                                               code=code,
-                                                               dependencies=dependencies,
-                                                               namespace=namespace)
+        impl = FunctionImplementation(name=name,
+                                      code=code,
+                                      dependencies=dependencies,
+                                      namespace=namespace)
+
+        self._implementations[target] = impl
 
     def add_dynamic_implementation(self, target, code, namespace=None,
                                    dependencies=None, name=None):
@@ -388,14 +406,17 @@ class FunctionImplementationContainer(collections.Mapping):
         is run in, e.g. the ``dt`` of a clock.
         '''
         if not callable(code):
-            raise TypeError('code argument has to be a callable, is type %s instead' % type(code))
+            raise TypeError('code argument has to be a callable, is type %s '
+                            'instead' % type(code))
         if namespace is not None and not callable(namespace):
-            raise TypeError('namespace argument has to be a callable, is type %s instead' % type(code))
-        self._implementations[target] = FunctionImplementation(name=name,
-                                                               code=code,
-                                                               namespace=namespace,
-                                                               dependencies=dependencies,
-                                                               dynamic=True)
+            raise TypeError('namespace argument has to be a callable, is type '
+                            '%s instead' % type(code))
+        impl = FunctionImplementation(name=name,
+                                      code=code,
+                                      namespace=namespace,
+                                      dependencies=dependencies,
+                                      dynamic=True)
+        self._implementations[target] = impl
 
     def __len__(self):
         return len(self._implementations)
@@ -419,7 +440,7 @@ def implementation(target, code=None, namespace=None, dependencies=None,
         What kind of code the target language expects is language-specific,
         e.g. C++ code allows for a dictionary of code blocks instead of a
         single string.
-    namespaces : dict-like, optional
+    namespace : dict-like, optional
         A namespace dictionary (i.e. a mapping of names to values) that
         should be added to a `CodeObject` namespace when using this function.
     dependencies : dict-like, optional
@@ -474,18 +495,19 @@ def implementation(target, code=None, namespace=None, dependencies=None,
         else:
             function = Function(func)
 
+        impls = function.implementations
         if discard_units:  # Add a numpy implementation that discards units
             if not (target == 'numpy' and code is None):
                 raise TypeError(("'discard_units' can only be set for code "
                                  "generation target 'numpy', without providing "
                                  "any code."))
-            function.implementations.add_numpy_implementation(wrapped_func=func,
-                                                              dependencies=dependencies,
-                                                              discard_units=discard_units)
+            impls.add_numpy_implementation(wrapped_func=func,
+                                           dependencies=dependencies,
+                                           discard_units=discard_units)
         else:
-            function.implementations.add_implementation(target, code=code,
-                                                        dependencies=dependencies,
-                                                        namespace=namespace)
+            impls.add_implementation(target, code=code,
+                                     dependencies=dependencies,
+                                     namespace=namespace)
         # # copy any annotation attributes
         # if hasattr(func, '_annotation_attributes'):
         #     for attrname in func._annotation_attributes:
@@ -514,8 +536,8 @@ class log10(sympy_Function):
     nargs = 1
 
     @classmethod
-    def eval(cls, args):
-        return sympy.functions.elementary.exponential.log(args, 10)
+    def eval(cls, arg):
+        return sympy.functions.elementary.exponential.log(arg, 10)
 
 
 DEFAULT_FUNCTIONS = {
@@ -557,11 +579,14 @@ DEFAULT_FUNCTIONS = {
     'abs': Function(np.abs, return_type='highest',
                     sympy_func=sympy.functions.elementary.complexes.Abs,
                     arg_units=[None], return_unit=lambda u: u),
-    'sign': Function(pyfunc=np.sign, sympy_func=sympy.sign, return_type='highest',
+    'sign': Function(pyfunc=np.sign, sympy_func=sympy.sign,
+                     return_type='highest',
                      arg_units=[None], return_unit=1),
     # functions that need special treatment
-    'rand': Function(pyfunc=rand, arg_units=[], return_unit=1, stateless=False),
-    'randn': Function(pyfunc=randn, arg_units=[], return_unit=1, stateless=False),
+    'rand': Function(pyfunc=rand, arg_units=[], return_unit=1,
+                     stateless=False),
+    'randn': Function(pyfunc=randn, arg_units=[], return_unit=1,
+                      stateless=False),
     'clip': Function(pyfunc=np.clip, arg_units=[None, None, None],
                      return_type='highest',
                      return_unit=lambda u1, u2, u3: u1,),

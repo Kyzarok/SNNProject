@@ -16,19 +16,19 @@ __all__ = ['PreferenceError', 'BrianPreference', 'prefs', 'brian_prefs']
 def parse_preference_name(name):
     '''
     Split a preference name into a base and end name.
-    
+
     Parameters
     ----------
     name : str
         The full name of the preference.
-    
+
     Returns
-    -------        
+    -------
     basename : str
         The first part of the name up to the final ``.``.
     endname : str
         The last part of the name from the final ``.`` onwards.
-    
+
     Examples
     --------
     >>> parse_preference_name('core.weave_compiler')
@@ -48,12 +48,12 @@ def check_preference_name(name):
     Make sure that a preference name is valid. This currently checks that the
     name does not contain illegal characters and does not clash with method
     names such as "keys" or "items".
-    
+
     Parameters
     ----------
     name : str
         The name to check.
-    
+
     Raises
     ------
     PreferenceError
@@ -78,7 +78,7 @@ class PreferenceError(Exception):
 class DefaultValidator(object):
     '''
     Default preference validator
-    
+
     Used by `BrianPreference` as the default validator if none is given.
     First checks if the provided value is of the same class as the default
     value, and then if the default is a `Quantity`, checks that the units
@@ -99,7 +99,7 @@ class DefaultValidator(object):
 class BrianPreference(object):
     '''
     Used for defining a Brian preference.
-    
+
     Parameters
     ----------    
     default : object
@@ -128,15 +128,15 @@ class BrianPreference(object):
 class BrianGlobalPreferences(MutableMapping):
     '''
     Class of the ``prefs`` object.
-    
+
     Used for getting/setting/validating/registering preference values.
     All preferences must be registered via `register_preferences`. To get or
     set a preference, you can either use a dictionary-based or an
     attribute-based interface::
-    
+
         prefs['core.default_float_dtype'] = float32
         prefs.core.default_float_dtype = float32
-        
+
     Preferences can be read from files, see `load_preferences` and
     `read_preference_file`. Note that `load_preferences` is called
     automatically when Brian has finished importing.
@@ -193,56 +193,56 @@ class BrianGlobalPreferences(MutableMapping):
     def __getattr__(self, name):
         if name in self.__dict__ or name.startswith('__'):
             return MutableMapping.__getattr__(self, name)
-        
+
         # This function might get called from BrianGlobalPreferencesView with
         # a prefixed name -- therefore the name can contain dots!
         if name in self.pref_register:
             # This asks for a category, not a single preference
             return BrianGlobalPreferencesView(name, self)
-        
+
         basename, _ = parse_preference_name(name)
         if len(basename) and basename not in self.pref_register:
             raise AssertionError(('__getattr__ received basename %s which is '
                                  'unregistered. This should never happen!') %
                                  basename)
-        
+
         return self[name]
 
-    def __setattr__(self, name, value):  
+    def __setattr__(self, name, value):
         # Do not allow to set a category name to something else
         if 'pref_register' in self.__dict__ and name in self.pref_register:
             raise PreferenceError('Cannot set a preference category.')
         else:
-            MutableMapping.__setattr__(self, name, value)      
+            MutableMapping.__setattr__(self, name, value)
 
     def __delattr__(self, name):
         if 'pref_register' in self.__dict__ and name in self.pref_register:
             raise PreferenceError('Cannot delete a preference category.')
         else:
-            MutableMapping.__setattr__(self, name, value)
+            MutableMapping.__delattr__(self, name)
 
     toplevel_categories = property(fget=lambda self: [category for category in
                                                       self.pref_register
                                                       if not '.' in category],
-                                   doc='The toplevel preference categories')    
+                                   doc='The toplevel preference categories')
 
     def _get_docstring(self):
         '''
         Document the toplevel categories, used as a docstring for the object.
         '''
-        s =  'Preference categories:\n\n'
+        s = 'Preference categories:\n\n'
         for category in self.toplevel_categories:
             s += '** %s **\n' % category
             _, category_doc = self.pref_register[category]
             s += '    ' + category_doc + '\n\n'
-        
+
         return s
 
     def __dir__(self):
         res = dir(type(self)) + self.__dict__.keys()
         categories = self.toplevel_categories
         res.extend(categories)
-        return res        
+        return res
 
     def eval_pref(self, value):
         '''
@@ -265,7 +265,6 @@ class BrianGlobalPreferences(MutableMapping):
         else:
             # go via the standard __setitem__ method
             self[name] = value
-        
 
     def _backup(self):
         '''
@@ -275,7 +274,8 @@ class BrianGlobalPreferences(MutableMapping):
 
     def _restore(self):
         '''
-        Restore a copy of the values of the preferences backed up with `_backup`.
+        Restore a copy of the values of the preferences backed up with
+        `_backup`.
         '''
         self.prefs.update(**self.backup_prefs)
 
@@ -286,7 +286,8 @@ class BrianGlobalPreferences(MutableMapping):
 
         s = ''
         if not basename in self.pref_register:
-            raise ValueError('No preferences under the name "%s" are registered' % basename)
+            raise ValueError('No preferences under the name "%s" are '
+                             'registered' % basename)
         prefdefs, basedoc = self.pref_register[basename]
         s += deindent(basedoc, docstring=True).strip() + '\n\n'
         for name in sorted(prefdefs.keys()):
@@ -296,8 +297,10 @@ class BrianGlobalPreferences(MutableMapping):
             if link_targets:
                 # Make a link target
                 s += '.. _brian-pref-{name}:\n\n'.format(name=linkname)
-            s += '``{name}`` = ``{default}``\n'.format(name=name,
-                                                       default=pref.representor(pref.default))
+            default = pref.representor(pref.default)
+            s += ('``{name}`` = '
+                  '``{default}``\n').format(name=name,
+                                            default=default)
             s += indent(deindent(pref.docs, docstring=True))
             s += '\n\n'
         return s
@@ -309,12 +312,13 @@ class BrianGlobalPreferences(MutableMapping):
         '''
         s = ''
         if basename is None:
-            basenames = [tuple(basename.split('.')) for basename in self.pref_register.keys()]
+            basenames = [tuple(basename.split('.'))
+                         for basename in self.pref_register.keys()]
             basenames.sort()
             for basename in basenames:
                 lev = len(basename)
                 basename = '.'.join(basename)
-                if lev==1:
+                if lev == 1:
                     s += basename+'\n'+'"'*len(basename)+'\n\n'
                 else:
                     s += '**' + basename + '**\n\n'
@@ -330,26 +334,31 @@ class BrianGlobalPreferences(MutableMapping):
 
     def _as_pref_file(self, valuefunc):
         '''
-        Helper function used to generate the preference file for the default or current preference values.
+        Helper function used to generate the preference file for the default or
+        current preference values.
         '''
         s = ''
         for basename, (prefdefs, basedoc) in self.pref_register.items():
             s += '#' + '-' * 79 + '\n'
-            s += '\n'.join(['# ' + line for line in deindent(basedoc, docstring=True).strip().split('\n')]) + '\n'
+            docstring = deindent(basedoc, docstring=True).strip().split('\n')
+            s += '\n'.join(['# ' + line for line in docstring]) + '\n'
             s += '#' + '-' * 79 + '\n\n'
             s += '[' + basename + ']\n\n'
             for name in sorted(prefdefs.keys()):
                 pref = prefdefs[name]
-                s += '\n'.join(['# ' + line for line in deindent(pref.docs, docstring=True).strip().split('\n')]) + '\n\n'
-                s += name + ' = ' + pref.representor(valuefunc(pref, basename + '.' + name)) + '\n\n'
+                docstring = deindent(pref.docs,
+                                     docstring=True).strip().split('\n')
+                s += '\n'.join(['# ' + line for line in docstring]) + '\n\n'
+                value = valuefunc(pref, basename + '.' + name)
+                s += name + ' = ' + pref.representor(value) + '\n\n'
         return s
 
     def _get_defaults_as_file(self):
         return self._as_pref_file(lambda pref, fullname: pref.default)
 
     defaults_as_file = property(fget=_get_defaults_as_file,
-                       doc='Get a Brian preference doc file format '
-                           'string for the default preferences')
+                                doc='Get a Brian preference doc file format '
+                                    'string for the default preferences')
 
     def _get_as_file(self):
         return self._as_pref_file(lambda pref, fullname: self[fullname])
@@ -359,37 +368,37 @@ class BrianGlobalPreferences(MutableMapping):
                            'string for the current preferences')
 
     def read_preference_file(self, file):
-        '''
+        r'''
         Reads a Brian preferences file
-    
+
         The file format for Brian preferences is a plain text file of the form::
-    
+
             a.b.c = 1
             # Comment line
             [a]
             b.d = 2
             [a.b]
             e = 3
-            
+
         Blank and comment lines are ignored, all others should be of one of the
         following two forms::
-        
+
             key = value
             [section]
-            
+
         `eval` is called on the values, so strings should be written as, e.g.
         ``'3'`` rather than ``3``. The eval is called with all unit names
         available.
         Within a section, the section name is prepended to the key. So in the above
         example, it would give the following unvalidated dictionary::
-        
+
             {'a.b.c': 1,
              'a.b.d': 2,
              'a.b.e': 3,
              }
-        
+
         Parameters
-        ----------        
+        ----------
         file : file, str
             The file object or filename of the preference file.
         '''
@@ -407,7 +416,8 @@ class BrianGlobalPreferences(MutableMapping):
         lines = [line for line in lines if not line.startswith('#')]
         bases = []  # start with no base
         for line in lines:
-            # Match section names, which are used as a prefix for subsequent entries
+            # Match section names, which are used as a prefix for subsequent
+            # entries
             m = re.match('\[([^\]]*)\]', line)
             if m:
                 bases = m.group(1).strip().split('.')
@@ -421,23 +431,24 @@ class BrianGlobalPreferences(MutableMapping):
                 self._set_preference(keyname, self.eval_pref(value))
                 continue
             # Otherwise raise a parsing error
-            raise PreferenceError("Parsing error in preference file " + filename)
+            raise PreferenceError("Parsing error in preference file " +
+                                  filename)
 
     def load_preferences(self):
         '''
         Load all the preference files, but do not validate them.
-    
+
         Preference files are read in the following order:
-        
+
         1. ``brian2/default_preferences`` from the Brian installation directory.
         2. ``~/.brian/user_preferences`` from the user's home directory
         3. ``./brian_preferences`` from the current directory
-        
+
         Files that are missing are ignored. Preferences read at each step
         override preferences from previous steps.
-        
+
         See Also
-        --------        
+        --------
         read_preference_file
         '''
         curdir, _ = os.path.split(__file__)
@@ -452,7 +463,7 @@ class BrianGlobalPreferences(MutableMapping):
                 self.read_preference_file(file)
             except IOError:
                 pass
-            
+
     def reset_to_defaults(self):
         '''
         Resets the parameters to their default values.
@@ -462,9 +473,9 @@ class BrianGlobalPreferences(MutableMapping):
     def register_preferences(self, prefbasename, prefbasedoc, **prefs):
         '''
         Registers a set of preference names, docs and validation functions.
-        
+
         Parameters
-        ----------        
+        ----------
         prefbasename : str
             The base name of the preference.
         prefbasedoc : str
@@ -473,18 +484,19 @@ class BrianGlobalPreferences(MutableMapping):
             The preference names to be defined. The full preference name will be
             ``prefbasename.name``, and the `BrianPreference` value is used to define
             the default value, docs, and validation function.
-            
+
         Raises
-        ------        
+        ------
         PreferenceError
             If the base name is already registered.
-            
+
         See Also
-        --------        
+        --------
         BrianPreference
         '''
         if prefbasename in self.pref_register:
-            raise PreferenceError("Base name " + prefbasename + " already registered.")
+            raise PreferenceError("Base name " + prefbasename +
+                                  " already registered.")
         # Check that the new category does not clash with a preference name of
         # the parent category. For example, if a category "a" with the
         # preference "b" is already registered, do not allow to register a
@@ -502,7 +514,7 @@ class BrianGlobalPreferences(MutableMapping):
         for k, v in prefs.items():
             fullname = prefbasename + '.' + k
             # The converse of the above check: Check that a preference name
-            # does not clash with a category 
+            # does not clash with a category
             if fullname in self.pref_register:
                 raise PreferenceError(('Cannot register "%s" as a preference, '
                                        'it is already registered as a '
@@ -510,7 +522,7 @@ class BrianGlobalPreferences(MutableMapping):
             check_preference_name(k)
             self.prefs_unvalidated[fullname] = v.default
         self.do_validation()
-        
+
         # Update the docstring (a new toplevel category might have been added)
         self.__doc__ = self._get_docstring()
 
@@ -524,7 +536,7 @@ class BrianGlobalPreferences(MutableMapping):
     def check_all_validated(self):
         '''
         Checks that all preferences that have been set have been validated.
-        
+
         Logs a warning if not. Should be called by `Network.run` or other
         key Brian functions.
         '''
@@ -552,7 +564,7 @@ class BrianGlobalPreferencesView(MutableMapping):
     autocompletion support for all preferences in the given category. This
     object is used to allow accessing preferences via attributes of the
     `prefs` object.
-    
+
     Parameters
     ----------
     basename : str
@@ -561,19 +573,21 @@ class BrianGlobalPreferencesView(MutableMapping):
     all_prefs : `BrianGlobalPreferences`
         A reference to the main object storing the preferences.
     '''
-    
+
     def __init__(self, basename, all_prefs):
         self._basename = basename
         self._all_prefs = all_prefs
         self._subcategories = [key for key in all_prefs.pref_register.iterkeys()
-                              if key.startswith(basename + '.')]
+                               if key.startswith(basename + '.')]
         self._preferences = all_prefs.pref_register[basename][0].keys()
         self.__doc__ = all_prefs.get_documentation(basename=basename,
                                                    link_targets=False)
 
-    _sub_preferences = property(lambda self: [pref[len(self._basename+'.'):] for pref in self._all_prefs
+    _sub_preferences = property(lambda self: [pref[len(self._basename+'.'):]
+                                              for pref in self._all_prefs
                                               if pref.startswith(self._basename+'.')],
-                                doc='All preferences in this category and its subcategories')
+                                doc='All preferences in this category and its '
+                                    'subcategories')
 
     def __getitem__(self, item):
         return self._all_prefs[self._basename + '.' + item]
@@ -583,10 +597,10 @@ class BrianGlobalPreferencesView(MutableMapping):
 
     def __delitem__(self, item):
         raise PreferenceError("Preferences cannot be deleted.")
-    
+
     def __len__(self):
         return len(self._sub_preferences)
-    
+
     def __iter__(self):
         return iter(self._sub_preferences)
 
@@ -618,7 +632,7 @@ class BrianGlobalPreferencesView(MutableMapping):
         res.extend([category[len(self._basename+'.'):]
                     for category in self._subcategories])
         return res
-    
+
     def __repr__(self):
         description = '<{classname} for preference category "{category}">'
         return description.format(classname=self.__class__.__name__,

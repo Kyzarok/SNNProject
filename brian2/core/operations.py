@@ -1,3 +1,7 @@
+"""
+Module defining the `NetworkOperation` class and the `network_operation`
+decorator.
+"""
 import inspect
 
 from brian2.core.base import BrianObject
@@ -7,10 +11,9 @@ __all__ = ['NetworkOperation', 'network_operation']
 
 class NetworkOperation(BrianObject):
     """Object with function that is called every time step.
-    
+
     Parameters
     ----------
-    
     function : function
         The function to call every time step, should take either no arguments
         in which case it is called as ``function()`` or one argument, in which
@@ -27,15 +30,16 @@ class NetworkOperation(BrianObject):
     order : int, optional
         The priority of this operation for operations occurring at the same time
         step and in the same scheduling slot. Defaults to 0.
-        
+
     See Also
     --------
-    
     network_operation, Network, BrianObject
     """
     add_to_magic_network = True
+
     def __init__(self, function, dt=None, clock=None, when='start', order=0):
-        BrianObject.__init__(self, dt=dt, clock=clock, when=when, order=order, name='networkoperation*')
+        BrianObject.__init__(self, dt=dt, clock=clock, when=when, order=order,
+                             name='networkoperation*')
 
         #: The function to be called each time step
         self.function = function
@@ -91,12 +95,12 @@ class NetworkOperation(BrianObject):
 def network_operation(*args, **kwds):
     """
     network_operation(when=None)
-    
+
     Decorator to make a function get called every time step of a simulation.
-    
+
     The function being decorated should either have no arguments, or a single
     argument which will be called with the current time ``t``.
-    
+
     Parameters
     ----------
     dt : `Quantity`, optional
@@ -114,23 +118,23 @@ def network_operation(*args, **kwds):
 
     Examples
     --------
-    
     Print something each time step:
+
     >>> from brian2 import *
     >>> @network_operation
     ... def f():
     ...   print('something')
     ...
     >>> net = Network(f)
-    
+
     Print the time each time step:
-    
+
     >>> @network_operation
     ... def f(t):
     ...   print('The time is', t)
     ...
     >>> net = Network(f)
-    
+
     Specify a dt, etc.:
 
     >>> @network_operation(dt=0.5*ms, when='end')
@@ -138,23 +142,21 @@ def network_operation(*args, **kwds):
     ...   print('This will happen at the end of each timestep.')
     ...
     >>> net = Network(f)
-    
+
     Notes
     -----
-    
     Converts the function into a `NetworkOperation`.
-    
+
     If using the form::
-    
+
         @network_operations(when='end')
         def f():
             ...
-            
+
     Then the arguments to network_operation must be keyword arguments.
-    
+
     See Also
     --------
-    
     NetworkOperation, Network, BrianObject
     """
     # Notes on this decorator:
@@ -198,14 +200,16 @@ def network_operation(*args, **kwds):
             # Depending on whether we were called as @network_operation or
             # @network_operation(...) we need different levels, the level is
             # 2 in the first case and 1 in the second case (because in the
-            # first case we go originalcaller->network_operation->do_network_operation
+            # first case we go
+            # originalcaller->network_operation->do_network_operation
             # and in the second case we go originalcaller->do_network_operation
             # at the time when this method is called).
             new_network_operation.__name__ = f.__name__
             new_network_operation.__doc__ = f.__doc__
             new_network_operation.__dict__.update(f.__dict__)
             return new_network_operation
-    if len(args)==1 and callable(args[0]):
+
+    if len(args) == 1 and callable(args[0]):
         # We're in case (1), the user has written:
         # @network_operation
         # def f():
