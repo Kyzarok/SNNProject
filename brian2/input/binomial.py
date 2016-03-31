@@ -63,12 +63,13 @@ def _generate_cython_code(n, p, use_normal, name):
                     px = ((%N%-X+1) * %P% * px)/(X*%Q%)
             return %RETURN_VALUE%
         '''
+        return_value = '%d-X' % n if reverse else 'X'
         cython_code = replace(cython_code, {'%N%': '%d' % n,
                                             '%P%': '%.15f' % p,
                                             '%Q%': '%.15f' % q,
                                             '%QN%': '%.15f' % qn,
                                             '%BOUND%': '%.15f' % bound,
-                                            '%RETURN_VALUE%': '%d-X' % n if reverse else 'X',
+                                            '%RETURN_VALUE%': return_value,
                                             '%NAME%': name})
         dependencies = {'_rand': DEFAULT_FUNCTIONS['rand']}
 
@@ -120,12 +121,13 @@ def _generate_cpp_code(n, p, use_normal, name):
             return %RETURN_VALUE%;
         }
         '''
+        return_value = '%d-X' % n if reverse else 'X'
         cpp_code = replace(cpp_code, {'%N%': '%d' % n,
                                       '%P%': '%.15f' % P,
                                       '%Q%': '%.15f' % q,
                                       '%QN%': '%.15f' % qn,
                                       '%BOUND%': '%.15f' % bound,
-                                      '%RETURN_VALUE%': '%d-X' % n if reverse else 'X',
+                                      '%RETURN_VALUE%': return_value,
                                       '%NAME%': name})
         dependencies = {'_rand': DEFAULT_FUNCTIONS['rand']}
 

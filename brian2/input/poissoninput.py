@@ -1,8 +1,6 @@
 '''
 Implementation of `PoissonInput`.
 '''
-from .binomial import BinomialFunction
-
 from brian2.core.variables import Variables
 from brian2.groups.group import CodeRunner
 from brian2.units.fundamentalunits import (check_units, have_same_dimensions,
@@ -10,6 +8,7 @@ from brian2.units.fundamentalunits import (check_units, have_same_dimensions,
                                            DimensionMismatchError)
 from brian2.units.stdunits import Hz
 
+from .binomial import BinomialFunction
 
 __all__ = ['PoissonInput']
 
@@ -53,7 +52,8 @@ class PoissonInput(CodeRunner):
     def __init__(self, target, target_var, N, rate, weight, when='synapses',
                  order=0):
         if target_var not in target.variables:
-            raise KeyError('%s is not a variable of %s' % (target_var, target.name))
+            raise KeyError('%s is not a variable of %s' % (target_var,
+                                                           target.name))
 
         if isinstance(weight, basestring):
             weight = '(%s)' % weight
@@ -67,17 +67,18 @@ class PoissonInput(CodeRunner):
             if not have_same_dimensions(weight_unit, target_unit):
                 raise DimensionMismatchError(('The provided weight does not '
                                               'have the same unit as the '
-                                              'target variable "%s"') % target_var,
+                                              'target variable '
+                                              '"%s"') % target_var,
                                              weight_unit.dim,
                                              target_unit.dim)
-
 
         binomial_sampling = BinomialFunction(N, rate*target.clock.dt,
                                              name='poissoninput_binomial*')
 
-        code = '{targetvar} += {binomial}()*{weight}'.format(targetvar=target_var,
-                                                             binomial=binomial_sampling.name,
-                                                             weight=weight)
+        code = ('{targetvar} += '
+                '{binomial}()*{weight}').format(targetvar=target_var,
+                                                binomial=binomial_sampling.name,
+                                                weight=weight)
         self._stored_dt = target.dt_[:]  # make a copy
         # FIXME: we need an explicit reference here for on-the-fly subgroups
         # For example: PoissonInput(group[:N], ...)

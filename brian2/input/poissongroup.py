@@ -18,7 +18,7 @@ __all__ = ['PoissonGroup']
 class PoissonGroup(Group, SpikeSource):
     '''
     Poisson spike source
-    
+
     Parameters
     ----------
     N : int
@@ -38,7 +38,7 @@ class PoissonGroup(Group, SpikeSource):
         The priority of of this group for operations occurring at the same time
         step and in the same scheduling slot. Defaults to 0.
     name : str, optional
-        Unique name, or use poissongroup, poissongroup_1, etc.
+        Unique name, or uses ``'poissongroup'``, ``'poissongroup_1'``, etc.
 
     '''
     add_to_magic_network = True
@@ -92,7 +92,8 @@ class PoissonGroup(Group, SpikeSource):
 
     def __getitem__(self, item):
         if not isinstance(item, slice):
-            raise TypeError('Subgroups can only be constructed using slicing syntax')
+            raise TypeError('Subgroups can only be constructed using slicing '
+                            'syntax')
         start, stop, step = item.indices(self._N)
         if step != 1:
             raise IndexError('Subgroups have to be contiguous')
@@ -117,4 +118,3 @@ class PoissonGroup(Group, SpikeSource):
         description = '{classname}({N}, rates=<...>)'
         return description.format(classname=self.__class__.__name__,
                                   N=self.N)
-

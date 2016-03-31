@@ -12,9 +12,7 @@ from brian2.core.names import Nameable
 from brian2.utils.logger import get_logger
 from brian2.utils.stringtools import replace
 
-
 __all__ = ['TimedArray']
-
 
 logger = get_logger(__name__)
 
@@ -153,7 +151,13 @@ class TimedArray(Function, Nameable):
                     i = %NUM_VALUES%-1;
                 return _namespace%NAME%_values[i];
             }
-            '''.replace('%NAME%', self.name).replace('%DT%', '%.18f' % dt).replace('%K%', str(K)).replace('%NUM_VALUES%', str(len(self.values)))
+            '''
+            support_code = replace(support_code,
+                                   {'%NAME%': self.name,
+                                    '%DT%': '%.18f' % dt,
+                                    '%K%': str(K),
+                                    '%NUM_VALUES%': str(len(self.values))
+                                    })
             cpp_code = {'support_code': support_code}
 
             return cpp_code
@@ -178,8 +182,12 @@ class TimedArray(Function, Nameable):
                 if i >= %NUM_VALUES%:
                     i = %NUM_VALUES% - 1
                 return _namespace%NAME%_values[i]
-            '''.replace('%NAME%', self.name).replace('%DT%', '%.18f' % dt).replace('%K%', str(K)).replace('%NUM_VALUES%', str(len(self.values)))
-
+            '''
+            code = replace(code, {'%NAME%': self.name,
+                                  '%DT%': '%.18f' % dt,
+                                  '%K%': str(K),
+                                  '%NUM_VALUES%': str(len(self.values))
+                                  })
             return code
 
         def create_cython_namespace(owner):
@@ -189,7 +197,6 @@ class TimedArray(Function, Nameable):
                                                         code=create_cython_implementation,
                                                         namespace=create_cython_namespace,
                                                         name=self.name)
-
 
     def _init_2d(self):
         unit = self.unit
@@ -248,19 +255,22 @@ class TimedArray(Function, Nameable):
                 return _namespace%NAME%_values[timestep*%COLS% + i];
             }
             '''
+            rows, cols = self.values.shape
             support_code = replace(support_code, {'%NAME%': self.name,
                                                   '%DT%': '%.18f' % dt,
                                                   '%K%': str(K),
-                                                  '%COLS%': str(self.values.shape[1]),
-                                                  '%ROWS%': str(self.values.shape[0])})
+                                                  '%COLS%': str(cols),
+                                                  '%ROWS%': str(rows)
+                                                  })
             cpp_code = {'support_code': support_code}
 
             return cpp_code
 
         def create_cpp_namespace(owner):
-            return {'%s_values' % self.name: self.values.astype(np.double,
-                                                                order='C',
-                                                                copy=False).ravel()}
+            values = self.values.astype(np.double,
+                                        order='C',
+                                        copy=False).ravel()
+            return {'%s_values' % self.name: values}
 
         self.implementations.add_dynamic_implementation('cpp',
                                                         code=create_cpp_implementation,
@@ -292,15 +302,15 @@ class TimedArray(Function, Nameable):
             return code
 
         def create_cython_namespace(owner):
-            return {'%s_values' % self.name: self.values.astype(np.double,
-                                                                order='C',
-                                                                copy=False).ravel()}
+            values = self.values.astype(np.double,
+                                        order='C',
+                                        copy=False).ravel()
+            return {'%s_values' % self.name: values}
 
         self.implementations.add_dynamic_implementation('cython',
                                                         code=create_cython_implementation,
                                                         namespace=create_cython_namespace,
                                                         name=self.name)
-
 
     def is_locally_constant(self, dt):
         if dt > self.dt:

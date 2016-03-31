@@ -14,7 +14,9 @@ __all__ = ['SpikeGeneratorGroup']
 
 class SpikeGeneratorGroup(Group, CodeRunner, SpikeSource):
     '''
-    SpikeGeneratorGroup(N, indices, times, dt=None, clock=None, period=1e100*second, when='thresholds', order=0, sorted=False, name='spikegeneratorgroup*', codeobj_class=None)
+    SpikeGeneratorGroup(N, indices, times, dt=None, clock=None,
+    period=1e100*second, when='thresholds', order=0, sorted=False,
+    name='spikegeneratorgroup*', codeobj_class=None)
 
     A group emitting spikes at given times.
 
@@ -64,7 +66,8 @@ class SpikeGeneratorGroup(Group, CodeRunner, SpikeSource):
                  period=1e100*second, when='thresholds', order=0, sorted=False,
                  name='spikegeneratorgroup*', codeobj_class=None):
 
-        Group.__init__(self, dt=dt, clock=clock, when=when, order=order, name=name)
+        Group.__init__(self, dt=dt, clock=clock, when=when, order=order,
+                       name=name)
 
         # Let other objects know that we emit spikes events
         self.events = {'spike': None}
@@ -103,7 +106,6 @@ class SpikeGeneratorGroup(Group, CodeRunner, SpikeSource):
 
         # We store the indices and times also directly in the Python object,
         # this way we can use them for checks in `before_run` even in standalone
-        # TODO: Remove this when the checks in `before_run` have been moved to the template
         self._spike_time = times
         self._neuron_index = indices
 
@@ -122,7 +124,8 @@ class SpikeGeneratorGroup(Group, CodeRunner, SpikeSource):
                                          size=len(indices), unit=Unit(1),
                                          dtype=np.int32, index='spike_number',
                                          read_only=True, constant=True)
-        self.variables.add_dynamic_array('spike_time', values=times, size=len(times),
+        self.variables.add_dynamic_array('spike_time', values=times,
+                                         size=len(times),
                                          unit=second, index='spike_number',
                                          read_only=True, constant=True)
         self.variables.add_array('_spikespace', size=N+1, unit=Unit(1),
@@ -171,7 +174,9 @@ class SpikeGeneratorGroup(Group, CodeRunner, SpikeSource):
                                                       dt))
 
         # Check that we don't have more than one spike per neuron in a time bin
-        if self._previous_dt is None or dt != self._previous_dt or self._spikes_changed:
+        if (self._previous_dt is None or
+                dt != self._previous_dt or
+                self._spikes_changed):
             # We shift all the spikes by a tiny amount to make sure that spikes
             # at exact multiples of dt do not end up in the previous time bin
             # This shift has to be quite significant relative to machine
@@ -263,7 +268,8 @@ class SpikeGeneratorGroup(Group, CodeRunner, SpikeSource):
         return spikespace[:spikespace[-1]]
 
     def __repr__(self):
+        index = self.variables['neuron_index']
         return ('{cls}({N}, indices=<length {l} array>, '
                 'times=<length {l} array>').format(cls=self.__class__.__name__,
                                                    N=self.N,
-                                                   l=self.variables['neuron_index'].size)
+                                                   l=index.size)
