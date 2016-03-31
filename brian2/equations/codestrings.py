@@ -79,9 +79,11 @@ class Expression(CodeString):
 
     def __init__(self, code=None, sympy_expression=None):
         if code is None and sympy_expression is None:
-            raise TypeError('Have to provide either a string or a sympy expression')
+            raise TypeError('Have to provide either a string or a sympy '
+                            'expression')
         if code is not None and sympy_expression is not None:
-            raise TypeError('Provide a string expression or a sympy expression, not both')
+            raise TypeError('Provide a string expression or a sympy '
+                            'expression, not both')
 
         if code is None:
             code = sympy_to_str(sympy_expression)
@@ -91,9 +93,11 @@ class Expression(CodeString):
             str_to_sympy(code)
         super(Expression, self).__init__(code=code)
 
-    stochastic_variables = property(lambda self: set([variable for variable in self.identifiers
-                                                      if variable =='xi' or variable.startswith('xi_')]),
-                                    doc='Stochastic variables in this expression')
+    @property
+    def stochastic_variables(self):
+        'Stochastic variables in this expression'
+        return set([variable for variable in self.identifiers
+                    if variable == 'xi' or variable.startswith('xi_')])
 
     def split_stochastic(self):
         '''
@@ -143,8 +147,8 @@ class Expression(CodeString):
                                           '"%s" into stochastic and non-'
                                           'stochastic term: non-stochastic '
                                           'part was determined to be "%s" but '
-                                          'contains a stochastic symbol)' % (self.code,
-                                                                             s_expr)))
+                                          'contains a stochastic '
+                                          'symbol)' % (self.code, s_expr)))
                 f_expr = expr
             elif var in stochastic_symbols:
                 stochastic_expressions[str(var)] = expr

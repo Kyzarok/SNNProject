@@ -15,12 +15,12 @@ def check_identifier_refractory(identifier):
     Check that the identifier is not using a name reserved for the refractory
     mechanism. The reserved names are `not_refractory`, `refractory`,
     `refractory_until`.
-    
+
     Parameters
     ----------
     identifier : str
         The identifier to check.
-        
+
     Raises
     ------
     ValueError
@@ -28,7 +28,8 @@ def check_identifier_refractory(identifier):
     '''
     if identifier in ('not_refractory', 'refractory', 'refractory_until'):
         raise ValueError(('The name "%s" is used in the refractory mechanism '
-                         ' and should not be used as a variable name.' % identifier))
+                         ' and should not be used as a variable '
+                          'name.' % identifier))
 
 Equations.register_identifier_check(check_identifier_refractory)
 
@@ -64,7 +65,7 @@ def add_refractoriness(eqs):
                                                 flags=eq.flags))
         else:
             new_equations.append(eq)
-    
+
     # add new parameters
     new_equations.append(SingleEquation(PARAMETER, 'not_refractory', Unit(1),
                                         var_type=BOOLEAN))

@@ -81,7 +81,7 @@ def check_units_statements(code, variables):
         line = line.strip()
         if not len(line):
             continue  # skip empty lines
-        
+
         varname, op, expr, comment = parse_statement(line)
         if op in ('+=', '-=', '*=', '/=', '%='):
             # Replace statements such as "w *=2" by "w = w * 2"

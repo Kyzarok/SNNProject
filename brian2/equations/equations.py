@@ -265,8 +265,8 @@ def unit_and_type_from_string(unit_string):
         if isinstance(evaluated_unit, Quantity):
             raise ValueError(('"%s" does not evaluate to a unit but to a '
                               'quantity -- make sure to only use units, e.g. '
-                              '"siemens/metre**2" and not "1 * siemens/metre**2"') %
-                             unit_string)
+                              '"siemens/metre**2" and not '
+                              '"1 * siemens/metre**2"') % unit_string)
         else:
             raise ValueError(('"%s" does not evaluate to a unit, the result '
                              'has type %s instead.' % (unit_string,
@@ -335,19 +335,19 @@ class SingleEquation(object):
     .. note::
         This class should never be used directly, it is only useful as part of
         the `Equations` class.
-    
+
     Parameters
     ----------
     type : {PARAMETER, DIFFERENTIAL_EQUATION, SUBEXPRESSION}
         The type of the equation.
     varname : str
         The variable that is defined by this equation.
-    unit : Unit
+    unit : `Unit`
         The unit of the variable
     var_type : {FLOAT, INTEGER, BOOLEAN}
         The type of the variable (floating point value or boolean).
     expr : `Expression`, optional
-        The expression defining the variable (or ``None`` for parameters).        
+        The expression defining the variable (or ``None`` for parameters).
     flags: list of str, optional
         A list of flags that give additional information about this equation.
         What flags are possible depends on the type of the equation and the
@@ -362,13 +362,16 @@ class SingleEquation(object):
         self.var_type = var_type
         if not have_same_dimensions(unit, 1):
             if var_type == BOOLEAN:
-                raise TypeError('Boolean variables are necessarily dimensionless.')
+                raise TypeError('Boolean variables are necessarily '
+                                'dimensionless.')
             elif var_type == INTEGER:
-                raise TypeError('Integer variables are necessarily dimensionless.')
+                raise TypeError('Integer variables are necessarily '
+                                'dimensionless.')
 
         if type == DIFFERENTIAL_EQUATION:
             if var_type != FLOAT:
-                raise TypeError('Differential equations can only define floating point variables')
+                raise TypeError('Differential equations can only define '
+                                'floating point variables')
         self.expr = expr
         if flags is None:
             self.flags = []
@@ -378,18 +381,22 @@ class SingleEquation(object):
         # will be set later in the sort_subexpressions method of Equations
         self.update_order = -1
 
-
     identifiers = property(lambda self: self.expr.identifiers
                            if not self.expr is None else set([]),
                            doc='All identifiers in the RHS of this equation.')
 
-    stochastic_variables = property(lambda self: set([variable for variable in self.identifiers
-                                                      if variable =='xi' or variable.startswith('xi_')]),
-                                    doc='Stochastic variables in the RHS of this equation')
+    @property
+    def stochastic_variables(self):
+        '''Stochastic variables in the RHS of this equation'''
+        return set([variable
+                    for variable in self.identifiers
+                    if variable == 'xi' or variable.startswith('xi_')])
 
     def _latex(self, *args):
         if self.type == DIFFERENTIAL_EQUATION:
-            return (r'\frac{\mathrm{d}' + sympy.latex(self.varname) + r'}{\mathrm{d}t} = ' +
+            return (r'\frac{\mathrm{d}' +
+                    sympy.latex(self.varname) +
+                    r'}{\mathrm{d}t} = ' +
                     sympy.latex(str_to_sympy(self.expr.code)))
         elif self.type == SUBEXPRESSION:
             return (sympy.latex(self.varname) + ' = ' +
@@ -469,7 +476,7 @@ class Equations(collections.Mapping):
     
     Parameters
     ----------
-    eqs : `str` or list of `SingleEquation` objects
+    eqs : str or list of `SingleEquation`
         A multiline string of equations (see above) -- for internal purposes
         also a list of `SingleEquation` objects can be given. This is done for
         example when adding new equations to implement the refractory
@@ -505,16 +512,18 @@ class Equations(collections.Mapping):
         for varname, replacement in kwds.iteritems():
 
             for eq in self.itervalues():
-                # Replacing the name of a model variable (works only for strings)
+                # Replacing the name of a model variable (only for strings)
                 if eq.varname == varname:
                     if not isinstance(replacement, basestring):
                         raise ValueError(('Cannot replace model variable "%s" '
                                           'with a value') % varname)
                     if replacement in self:
-                        raise EquationError(('Cannot replace model variable "%s" '
-                                             'with "%s", duplicate definition '
-                                             'of "%s".' % (varname, replacement,
-                                                           replacement)))
+                        raise EquationError(('Cannot replace model variable '
+                                             '"%s" with "%s", duplicate '
+                                             'definition of '
+                                             '"%s".' % (varname,
+                                                        replacement,
+                                                        replacement)))
                     # make sure that the replacement is a valid identifier
                     Equations.check_identifier(replacement)
                     eq.varname = replacement
@@ -533,8 +542,8 @@ class Equations(collections.Mapping):
                     try:
                         eq.expr = Expression(new_code)
                     except ValueError as ex:
-                        raise ValueError(('Replacing "%s" with "%r" failed: %s') %
-                                         (varname, replacement, ex))
+                        raise ValueError(('Replacing "%s" with "%r" failed: '
+                                          '%s') % (varname, replacement, ex))
 
         # For change in model variable names, we have already changed the
         # varname attribute of the SingleEquation object, but not the key of
@@ -547,14 +556,14 @@ class Equations(collections.Mapping):
         for eq in self._equations.itervalues():
             if not eq.expr is None and 'xi' in eq.expr.identifiers:
                 if not eq.type == DIFFERENTIAL_EQUATION:
-                    raise EquationError(('The equation defining %s contains the '
-                                         'symbol "xi" but is not a differential '
-                                         'equation.') % eq.varname)
+                    raise EquationError(('The equation defining %s contains '
+                                         'the symbol "xi" but is not a '
+                                         'differential equation.') % eq.varname)
                 elif not uses_xi is None:
-                    raise EquationError(('The equation defining %s contains the '
-                                         'symbol "xi", but it is already used '
-                                         'in the equation defining %s.') %
-                                        (eq.varname, uses_xi))
+                    raise EquationError(('The equation defining %s contains '
+                                         'the symbol "xi", but it is already '
+                                         'used in the equation defining '
+                                         '%s.') % (eq.varname, uses_xi))
                 else:
                     uses_xi = eq.varname
 
@@ -608,12 +617,12 @@ class Equations(collections.Mapping):
         '''
         Perform all the registered checks. Checks can be registered via
         `Equations.register_identifier_check`.
-        
+
         Parameters
         ----------
         identifier : str
             The identifier that should be checked
-        
+
         Raises
         ------
         ValueError
@@ -625,15 +634,16 @@ class Equations(collections.Mapping):
     def check_identifiers(self):
         '''
         Check all identifiers for conformity with the rules.
-        
+
         Raises
         ------
         ValueError
             If an identifier does not conform to the rules.
-        
+
         See also
         --------
-        Equations.check_identifier : The function that is called for each identifier.
+        Equations.check_identifier : The function that is called for each
+            identifier.
         '''
         for name in self.names:
             Equations.check_identifier(name)
@@ -664,12 +674,14 @@ class Equations(collections.Mapping):
             if eq.expr is None:
                 continue
 
-            new_sympy_expr = str_to_sympy(eq.expr.code, variables).xreplace(substitutions)
+            sympy_expr = str_to_sympy(eq.expr.code, variables)
+            new_sympy_expr = sympy_expr.xreplace(substitutions)
             new_str_expr = sympy_to_str(new_sympy_expr)
             expr = Expression(new_str_expr)
 
             if eq.type == SUBEXPRESSION:
-                substitutions.update({sympy.Symbol(eq.varname, real=True): str_to_sympy(expr.code, variables)})
+                var_symbol = sympy.Symbol(eq.varname, real=True)
+                substitutions[var_symbol] = str_to_sympy(expr.code, variables)
             elif eq.type == DIFFERENTIAL_EQUATION:
                 #  a differential equation that we have to check
                 subst_exprs.append((eq.varname, expr))
@@ -683,7 +695,7 @@ class Equations(collections.Mapping):
         Returns the type of stochastic differential equations (additivive or
         multiplicative). The system is only classified as ``additive`` if *all*
         equations have only additive noise (or no noise).
-        
+
         Returns
         -------
         type : str
@@ -692,12 +704,9 @@ class Equations(collections.Mapping):
             time), ``'multiplicative'`` (at least one of the noise factors
             depends on other state variables and/or time).
         '''
-        
-        # TODO: Add debug output
-        
         if not self.is_stochastic:
             return None
-        
+
         for _, expr in self.get_substituted_expressions():
             _, stochastic = expr.split_stochastic()
             if stochastic is not None:
@@ -710,7 +719,7 @@ class Equations(collections.Mapping):
                         if identifier in self.diff_eq_names:
                             # factor depends on another state variable
                             return 'multiplicative'
-        
+
         return 'additive'
 
 
@@ -721,58 +730,75 @@ class Equations(collections.Mapping):
     # Lists of equations or (variable, expression tuples)
     ordered = property(lambda self: sorted(self._equations.itervalues(),
                                            key=lambda key: key.update_order),
-                                           doc='A list of all equations, sorted '
-                                           'according to the order in which they should '
-                                           'be updated')
+                       doc='A list of all equations, sorted according to the '
+                           'order in which they should be updated')
 
-    diff_eq_expressions = property(lambda self: [(varname, eq.expr) for
-                                                 varname, eq in self.iteritems()
-                                                 if eq.type == DIFFERENTIAL_EQUATION],
-                                  doc='A list of (variable name, expression) '
-                                  'tuples of all differential equations.')
+    @property
+    def diff_eq_expressions(self):
+        '''
+        A list of (variable name, expression) tuples of all differential
+        equations.
+        '''
+        return [(varname, eq.expr) for varname, eq in self.iteritems()
+                if eq.type == DIFFERENTIAL_EQUATION]
 
-    eq_expressions = property(lambda self: [(varname, eq.expr) for
-                                            varname, eq in self.iteritems()
-                                            if eq.type in (SUBEXPRESSION,
-                                                              DIFFERENTIAL_EQUATION)],
-                              doc='A list of (variable name, expression) '
-                                  'tuples of all equations.')
+    @property
+    def eq_expressions(self):
+        '''
+        A list of (variable name, expression) tuples of all equations.
+        '''
+        return [(varname, eq.expr) for varname, eq in self.iteritems()
+                if eq.type in (SUBEXPRESSION, DIFFERENTIAL_EQUATION)]
 
     # Sets of names
-
     names = property(lambda self: set([eq.varname for eq in self.ordered]),
                      doc='All variable names defined in the equations.')
 
-    diff_eq_names = property(lambda self: set([eq.varname for eq in self.ordered
-                                           if eq.type == DIFFERENTIAL_EQUATION]),
-                             doc='All differential equation names.')
+    @property
+    def diff_eq_names(self):
+        'All differential equation names.'
+        return set([eq.varname for eq in self.ordered
+                    if eq.type == DIFFERENTIAL_EQUATION])
 
-    subexpr_names = property(lambda self: set([eq.varname for eq in self.ordered
-                                               if eq.type == SUBEXPRESSION]),
-                             doc='All subexpression names.')
+    @property
+    def subexpr_names(self):
+        'All subexpression names.'
+        return set([eq.varname for eq in self.ordered
+                    if eq.type == SUBEXPRESSION])
 
-    eq_names = property(lambda self: set([eq.varname for eq in self.ordered
-                                           if eq.type in (DIFFERENTIAL_EQUATION,
-                                                          SUBEXPRESSION)]),
-                        doc='All equation names (including subexpressions).')
+    @property
+    def eq_names(self):
+        'All equation names (including subexpressions).'
+        return set([eq.varname for eq in self.ordered
+                    if eq.type in (DIFFERENTIAL_EQUATION, SUBEXPRESSION)])
 
-    parameter_names = property(lambda self: set([eq.varname for eq in self.ordered
-                                             if eq.type == PARAMETER]),
-                               doc='All parameter names.')
+    @property
+    def parameter_names(self):
+        'All parameter names.'
+        return set([eq.varname for eq in self.ordered
+                    if eq.type == PARAMETER])
 
     units = property(lambda self:dict([(var, eq.unit) for var, eq in
                                        self._equations.iteritems()]),
-                     doc='Dictionary of all internal variables and their corresponding units.')
+                     doc='Dictionary of all internal variables and their '
+                         'corresponding units.')
 
+    @property
+    def identifiers(self):
+        '''
+        Set of all identifiers used in the equations,  excluding the variables
+        defined in the equations.
+        '''
+        return set().union(*[eq.identifiers for
+                             eq in self._equations.itervalues()]) - self.names
 
-    identifiers = property(lambda self: set().union(*[eq.identifiers for
-                                                      eq in self._equations.itervalues()]) -
-                           self.names,
-                           doc=('Set of all identifiers used in the equations, '
-                                'excluding the variables defined in the equations'))
-
-    stochastic_variables = property(lambda self: set([variable for variable in self.identifiers
-                                                      if variable =='xi' or variable.startswith('xi_')]))
+    @property
+    def stochastic_variables(self):
+        '''
+        All stochastic variables used in the equations.
+        '''
+        return set([variable for variable in self.identifiers
+                    if variable == 'xi' or variable.startswith('xi_')])
 
     # general properties
     is_stochastic = property(lambda self: len(self.stochastic_variables) > 0,
@@ -787,7 +813,6 @@ class Equations(collections.Mapping):
         returned by the ``ordered`` property are in the order in which
         they should be updated
         '''
-
         # Get a dictionary of all the dependencies on other subexpressions,
         # i.e. ignore dependencies on parameters and differential equations
         static_deps = {}
@@ -796,7 +821,6 @@ class Equations(collections.Mapping):
                 static_deps[eq.varname] = [dep for dep in eq.identifiers if
                                            dep in self._equations and
                                            self._equations[dep].type == SUBEXPRESSION]
-        
         try:
             sorted_eqs = topsort(static_deps)
         except ValueError:
@@ -817,7 +841,7 @@ class Equations(collections.Mapping):
     def check_units(self, group, run_namespace=None, level=0):
         '''
         Check all the units for consistency.
-        
+
         Parameters
         ----------
         group : `Group`
@@ -838,7 +862,8 @@ class Equations(collections.Mapping):
         external -= set(all_variables.keys())
 
         resolved_namespace = group.resolve_all(external,
-                                               external,  # all variables are user defined
+                                               # all variables are user defined
+                                               external,
                                                run_namespace=run_namespace,
                                                level=level+1)
         all_variables.update(resolved_namespace)
@@ -875,19 +900,19 @@ class Equations(collections.Mapping):
     def check_flags(self, allowed_flags):
         '''
         Check the list of flags.
-        
+
         Parameters
         ----------
         allowed_flags : dict
              A dictionary mapping equation types (PARAMETER,
              DIFFERENTIAL_EQUATION, SUBEXPRESSION) to a list of strings (the
              allowed flags for that equation type)
-        
+
         Notes
         -----
         Not specifying allowed flags for an equation type is the same as
         specifying an empty list for it.
-        
+
         Raises
         ------
         ValueError
@@ -895,13 +920,16 @@ class Equations(collections.Mapping):
         '''
         for eq in self.itervalues():
             for flag in eq.flags:
-                if not eq.type in allowed_flags or len(allowed_flags[eq.type]) == 0:
-                    raise ValueError('Equations of type "%s" cannot have any flags.' % eq.type)
-                if not flag in allowed_flags[eq.type]:
+                if (eq.type not in allowed_flags or
+                            len(allowed_flags[eq.type]) == 0):
+                    raise ValueError('Equations of type "%s" cannot have any '
+                                     'flags.' % eq.type)
+                if flag not in allowed_flags[eq.type]:
                     raise ValueError(('Equations of type "%s" cannot have a '
                                       'flag "%s", only the following flags '
-                                      'are allowed: %s') % (eq.type,
-                                                            flag, allowed_flags[eq.type]))
+                                      'are allowed: '
+                                      '%s') % (eq.type, flag,
+                                               allowed_flags[eq.type]))
 
     ############################################################################
     # Representation
@@ -912,7 +940,8 @@ class Equations(collections.Mapping):
         return '\n'.join(strings)
 
     def __repr__(self):
-        return '<Equations object consisting of %d equations>' % len(self._equations)
+        return ('<Equations object consisting of %d '
+                'equations>') % len(self._equations)
 
     def _latex(self, *args):        
         equations = []
@@ -921,7 +950,9 @@ class Equations(collections.Mapping):
             # do not use SingleEquations._latex here as we want nice alignment
             varname = sympy.Symbol(eq.varname)
             if eq.type == DIFFERENTIAL_EQUATION:
-                lhs = r'\frac{\mathrm{d}' + sympy.latex(varname) + r'}{\mathrm{d}t}'
+                lhs = (r'\frac{\mathrm{d}' +
+                       sympy.latex(varname) +
+                       r'}{\mathrm{d}t}')
             else:
                 # Normal equation or parameter
                 lhs = varname
@@ -932,16 +963,20 @@ class Equations(collections.Mapping):
             else:
                 flag_str = ''
             if eq.type == PARAMETER:
-                eq_latex = r'%s &&& \text{(unit: $%s$%s)}' % (sympy.latex(lhs),                                 
-                                                              sympy.latex(eq.unit),
-                                                              flag_str)
+                eq_latex = (r'%s &&& '
+                            r'\text{(unit: $%s$%s)}') % (sympy.latex(lhs),
+                                                         sympy.latex(eq.unit),
+                                                         flag_str)
             else:
-                eq_latex = r'%s &= %s && \text{(unit: $%s$%s)}' % (sympy.latex(lhs),
-                                                                   sympy.latex(rhs),
-                                                                   sympy.latex(eq.unit),
-                                                                   flag_str)
+                eq_latex = (r'%s &= %s && '
+                            r'\text{(unit: $%s$%s)}') % (sympy.latex(lhs),
+                                                         sympy.latex(rhs),
+                                                         sympy.latex(eq.unit),
+                                                         flag_str)
             equations.append(eq_latex)
-        return r'\begin{align*}' + (r'\\' + '\n').join(equations) + r'\end{align*}'
+        return (r'\begin{align*}' +
+                (r'\\' + '\n').join(equations) +
+                r'\end{align*}')
 
     def _repr_latex_(self):
         return sympy.latex(self)
