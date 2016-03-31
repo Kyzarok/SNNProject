@@ -1,3 +1,7 @@
+'''
+Module defining the `Subgroup` class, to access variables in contiguous slices
+of a `Group`.
+'''
 from brian2.core.base import weakproxy_with_fallback
 from brian2.core.spikesource import SpikeSource
 from brian2.core.variables import Variables
@@ -11,7 +15,7 @@ __all__ = ['Subgroup']
 class Subgroup(Group, SpikeSource):
     '''
     Subgroup of any `Group`
-    
+
     Parameters
     ----------
     source : SpikeSource
@@ -54,7 +58,8 @@ class Subgroup(Group, SpikeSource):
 
         # overwrite the meaning of N and i
         if self.start > 0:
-            self.variables.add_constant('_offset', unit=Unit(1), value=self.start)
+            self.variables.add_constant('_offset', unit=Unit(1),
+                                        value=self.start)
             self.variables.add_reference('_source_i', source, 'i')
             self.variables.add_subexpression('i', unit=Unit(1),
                                              dtype=source.variables['i'].dtype,
@@ -91,7 +96,8 @@ class Subgroup(Group, SpikeSource):
 
     def __getitem__(self, item):
         if not isinstance(item, slice):
-            raise TypeError('Subgroups can only be constructed using slicing syntax')
+            raise TypeError('Subgroups can only be constructed using slicing '
+                            'syntax')
         start, stop, step = item.indices(self._N)
         if step != 1:
             raise IndexError('Subgroups have to be contiguous')
@@ -107,3 +113,7 @@ class Subgroup(Group, SpikeSource):
                                   source=repr(self.source.name),
                                   start=self.start,
                                   end=self.stop)
+
+    def set_states(self, values, units=True, format='dict', level=0):
+        raise NotImplementedError('Cannot set states on a subgroup, use the'
+                                  'main group instead.')

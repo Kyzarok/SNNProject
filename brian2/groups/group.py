@@ -65,6 +65,7 @@ def _display_value(obj):
         return '<Function>'
     return repr(obj)
 
+
 def _conflict_warning(message, resolutions):
     '''
     A little helper functions to generate warnings for logging. Specific
@@ -82,12 +83,13 @@ def _conflict_warning(message, resolutions):
         return
     elif len(resolutions) == 1:
         second_part = ('but the name also refers to a variable in the %s '
-                       'namespace with value %s.') % (resolutions[0][0],
-                                                      _display_value(resolutions[0][1]))
+                       'namespace with value '
+                       '%s.') % (resolutions[0][0],
+                                 _display_value(resolutions[0][1]))
     else:
-        second_part = ('but the name also refers to a variable in the following '
-                       'namespaces: %s.') % (', '.join([r[0]
-                                                        for r in resolutions]))
+        second_part = ('but the name also refers to a variable in the '
+                       'following namespaces: '
+                       '%s.') % (', '.join([r[0] for r in resolutions]))
 
     logger.warn(message + ' ' + second_part,
                 'Group.resolve.resolution_conflict', once=True)
@@ -122,9 +124,10 @@ def get_dtype(equation, dtype=None):
             provided_dtype = np.dtype(dtype[equation.varname])
             if not provided_dtype.kind in BASIC_TYPES[equation.var_type]:
                 raise TypeError(('Error determining dtype for variable %s: %s '
-                                 'is not a correct type for %s variables') % (equation.varname,
-                                                              provided_dtype.name,
-                                                              equation.var_type))
+                                 'is not a correct type for %s '
+                                 'variables') % (equation.varname,
+                                                 provided_dtype.name,
+                                                 equation.var_type))
             else:
                 return dtype[equation.varname]
         else:  # continue as if no dtype had been specified at all
@@ -284,16 +287,17 @@ class IndexWrapper(object):
 
             abstract_code = '_cond = ' + item
             from brian2.devices.device import get_default_codeobject_class
+            default_class = get_default_codeobject_class('codegen.string_expression_target')
             codeobj = create_runner_codeobj(self.group,
                                             abstract_code,
                                             'group_get_indices',
                                             additional_variables=variables,
                                             level=1,
-                                            codeobj_class=get_default_codeobject_class('codegen.string_expression_target')
-                                            )
+                                            codeobj_class=default_class)
             return codeobj()
         else:
             return self.indices(item)
+
 
 class VariableOwner(Nameable):
     '''
@@ -382,7 +386,8 @@ class VariableOwner(Nameable):
     def __setattr__(self, name, val, level=0):
         # attribute access is switched off until this attribute is created by
         # _enable_group_attributes
-        if not hasattr(self, '_group_attribute_access_active') or name in self.__dict__:
+        if (not hasattr(self, '_group_attribute_access_active') or
+                    name in self.__dict__):
             object.__setattr__(self, name, val)
         elif (name in self.__getattribute__('__dict__') or
                     name in self.__getattribute__('__class__').__dict__):
@@ -407,9 +412,8 @@ class VariableOwner(Nameable):
             if var.read_only:
                 raise TypeError('Variable %s is read-only.' % name)
             # Make the call X.var = ... equivalent to X.var[:] = ...
-            var.get_addressable_value_with_unit(name, self).set_item(slice(None),
-                                                                     val,
-                                                                     level=level+1)
+            addressable_value = var.get_addressable_value_with_unit(name, self)
+            addressable_value.set_item(slice(None), val, level=level + 1)
         elif len(name) and name[-1]=='_' and name[:-1] in self.variables:
             # no unit checking
             var = self.variables[name[:-1]]
@@ -423,8 +427,10 @@ class VariableOwner(Nameable):
             object.__setattr__(self, name, val)
         else:
             # Try to suggest the correct name in case of a typo
-            checker = SpellChecker([varname for varname, var in self.variables.iteritems()
-                                    if not (varname.startswith('_') or var.read_only)])
+            checker = SpellChecker([vname
+                                    for vname, var in self.variables.iteritems()
+                                    if not (vname.startswith('_') or
+                                            var.read_only)])
             if name.endswith('_'):
                 suffix = '_'
                 name = name[:-1]
@@ -437,9 +443,11 @@ class VariableOwner(Nameable):
                 error_msg += ' Did you mean to write "%s%s"?' % (suggestion,
                                                                  suffix)
             elif len(suggestions) > 1:
-                error_msg += (' Did you mean to write any of the following: %s ?' %
-                              (', '.join(['"%s%s"' % (suggestion, suffix)
-                                          for suggestion in suggestions])))
+                suggestion_str = ', '.join(['"%s%s"' % (suggestion,
+                                                        suffix)
+                                            for suggestion in suggestions])
+                error_msg += (' Did you mean to write any of the following: '
+                              '%s ?' % suggestion_str)
             error_msg += (' Use the add_attribute method if you intend to add '
                           'a new attribute to the object.')
             raise AttributeError(error_msg)
@@ -517,7 +525,9 @@ class VariableOwner(Nameable):
             vars = [name for name, var in self.variables.iteritems()
                     if not name.startswith('_') and
                     (subexpressions or not isinstance(var, Subexpression)) and
-                    (read_only_variables or not getattr(var, 'read_only', False))]
+                    (read_only_variables or not getattr(var,
+                                                        'read_only',
+                                                        False))]
         data = {}
         for var in vars:
             data[var] = np.array(self.state(var, use_units=units,
@@ -712,28 +722,29 @@ class Group(VariableOwner, BrianObject):
             run_namespace = get_local_namespace(level=level+1)
         resolved = {}
         for identifier in identifiers:
-            resolved[identifier] = self._resolve(identifier,
-                                                 user_identifier=identifier in user_identifiers,
-                                                 additional_variables=additional_variables,
-                                                 run_namespace=run_namespace)
+            value = self._resolve(identifier,
+                                  user_identifier=identifier in user_identifiers,
+                                  additional_variables=additional_variables,
+                                  run_namespace=run_namespace)
+            resolved[identifier] = value
         return resolved
 
     def _resolve_external(self, identifier, run_namespace, user_identifier=True,
                           internal_variable=None):
         '''
-        Resolve an external identifier in the context of a `Group`. If the `Group`
-        declares an explicit namespace, this namespace is used in addition to the
-        standard namespace for units and functions. Additionally, the namespace in
-        the `run_namespace` argument (i.e. the namespace provided to `Network.run`)
-        is used.
+        Resolve an external identifier in the context of a `Group`. If the
+        `Group` declares an explicit namespace, this namespace is used in
+        addition to the standard namespace for units and functions.
+        Additionally, the namespace in the `run_namespace` argument (i.e. the
+        namespace provided to `Network.run`) is used.
 
         Parameters
         ----------
         identifier : str
             The name to resolve.
         group : `Group`
-            The group that potentially defines an explicit namespace for looking up
-            external names.
+            The group that potentially defines an explicit namespace for
+            looking up external names.
         run_namespace : dict
             A namespace (mapping from strings to objects), as provided as an
             argument to the `Network.run` function or returned by
@@ -834,13 +845,15 @@ class Group(VariableOwner, BrianObject):
                 warning_message = ('"{name}" is an internal variable of group '
                                    '"{group}", but also exists in the ')
                 if len(matches) == 1:
+                    namespace = filtered_matches[0][0]
+                    value = _display_value(filtered_matches[0][1])
                     warning_message += ('{namespace} namespace with the value '
-                                        '{value}. ').format(namespace=filtered_matches[0][0],
-                                                           value=_display_value(filtered_matches[0][1]))
+                                        '{value}. ').format(namespace=namespace,
+                                                            value=value)
                 else:
+                    ns = ' ,'.join(match[0] for match in filtered_matches)
                     warning_message += ('following namespaces: '
-                                        '{namespaces}. ').format(namespaces=' ,'.join(match[0]
-                                                                                     for match in filtered_matches))
+                                        '{namespaces}. ').format(namespaces=ns)
                 warning_message += 'The internal variable will be used.'
                 logger.warn(warning_message.format(name=identifier,
                                                    group=self.name),
@@ -896,6 +909,10 @@ class Group(VariableOwner, BrianObject):
             the `dt` argument is specified, defaults to the clock of the group.
         when : str, optional
             When to run within a time step, defaults to the ``'start'`` slot.
+        order : int, optional
+            The priority of of this operation, when several operations are
+            occurring at the same time step and in the same scheduling slot.
+            Defaults to 0.
         name : str, optional
             A unique name, if non is given the name of the group appended with
             'run_regularly', 'run_regularly_1', etc. will be used. If a
@@ -928,11 +945,11 @@ class CodeRunner(BrianObject):
     A "code runner" that runs a `CodeObject` every timestep and keeps a
     reference to the `Group`. Used in `NeuronGroup` for `Thresholder`,
     `Resetter` and `StateUpdater`.
-    
+
     On creation, we try to run the before_run method with an empty additional
     namespace (see `Network.before_run`). If the namespace is already complete
     this might catch unit mismatches.
-    
+
     Parameters
     ----------
     group : `Group`
@@ -984,6 +1001,7 @@ class CodeRunner(BrianObject):
     '''
     add_to_magic_network = True
     invalidates_magic_network = True
+
     def __init__(self, group, template, code='', user_code=None,
                  dt=None, clock=None, when='start',
                  order=0, name='coderunner*', check_units=True,
@@ -1013,7 +1031,7 @@ class CodeRunner(BrianObject):
         Update the abstract code for the code object. Will be called in
         `before_run` and should update the `CodeRunner.abstract_code`
         attribute.
-        
+
         Does nothing by default.
         '''
         pass
