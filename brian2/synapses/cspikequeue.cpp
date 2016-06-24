@@ -65,7 +65,7 @@ public:
             const size_t newsize = (int)(oldsize * conversion_factor) + 1;
             queue.clear();
             queue.resize(newsize);
-            for (unsigned int i=0; i<oldsize; i++)
+            for (size_t i=0; i<oldsize; i++)
             {
                 vector<int32_t> spikes = queue_copy[(i + offset) % oldsize];
                 queue[(int)(i * conversion_factor + 0.5)] = spikes;
@@ -84,7 +84,7 @@ public:
         scalar first_delay = n_delays > 0 ? real_delays[0] : 0.0;
         unsigned int min_delay = (unsigned int)(first_delay / _dt + 0.5);
         unsigned int max_delay = min_delay;
-        for (int i=0; i<n_delays; i++)
+        for (unsigned int i=0; i<n_delays; i++)
         {
             //round to nearest int
             delays[i] =  (unsigned int)(real_delays[i] / _dt + 0.5);
@@ -93,7 +93,7 @@ public:
             else if (delays[i] < min_delay)
                 min_delay = delays[i];
         }
-        for (int i=0; i<n_synapses; i++)
+        for (unsigned int i=0; i<n_synapses; i++)
             synapses[sources[i] - source_start].push_back(i + openmp_padding);
 
         dt = _dt;
@@ -123,7 +123,7 @@ public:
         if (size == 0)  // the queue did not exist at the time of the store call
             size = 1;
         queue.resize(size);
-        for (int i=0; i<stored_queue.size(); i++)
+        for (size_t i=0; i<stored_queue.size(); i++)
             queue[i] = stored_queue[i];
         offset = stored_offset;
     }
@@ -160,13 +160,13 @@ public:
             for(unsigned int idx_spike=start; idx_spike<stop; idx_spike++)
             {
                 const unsigned int idx_neuron = rspikes[idx_spike] - source_start;
-                const unsigned int num_indices = synapses[idx_neuron].size();
+                const size_t num_indices = synapses[idx_neuron].size();
                 if(num_indices==0) continue;
                 const int* __restrict cur_indices = &(synapses[idx_neuron][0]);
-                const unsigned int cur_homog_queue_size = homog_queue.size();
+                const size_t cur_homog_queue_size = homog_queue.size();
                 homog_queue.resize(cur_homog_queue_size+num_indices);
                 int32_t * __restrict hq = &(homog_queue[cur_homog_queue_size]);
-                for(unsigned int idx_indices=0; idx_indices<num_indices; idx_indices++)
+                for(size_t idx_indices=0; idx_indices<num_indices; idx_indices++)
                 {
                     hq[idx_indices] = cur_indices[idx_indices];
                 }
@@ -177,10 +177,10 @@ public:
             for(unsigned int idx_spike=start; idx_spike<stop; idx_spike++)
             {
                 const unsigned int idx_neuron = rspikes[idx_spike] - source_start;
-                const unsigned int num_indices = synapses[idx_neuron].size();
+                const size_t num_indices = synapses[idx_neuron].size();
                 if(num_indices==0) continue;
                 const int* __restrict cur_indices = &(synapses[idx_neuron][0]);
-                for(unsigned int idx_indices=0; idx_indices<num_indices; idx_indices++)
+                for(size_t idx_indices=0; idx_indices<num_indices; idx_indices++)
                 {
                     const int synaptic_index = cur_indices[idx_indices];
                     unsigned int delay = rdelays[synaptic_index];
