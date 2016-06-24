@@ -130,7 +130,7 @@ public:
 
     void expand(unsigned int newsize)
     {
-        const unsigned int n = queue.size();
+        const size_t n = queue.size();
         if (newsize<=n)
             return;
         // rotate offset back to start (leaves the circular structure unchanged)
