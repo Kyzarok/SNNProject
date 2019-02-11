@@ -40,5 +40,9 @@
 {% endmacro %}
 
 {% macro support_code() %}
+#define _INDEX(_neuron, _compartment) ((_neuron)*_n_compartments + (_compartment))
+#define _INDEX_SEC(_neuron, _section) ((_neuron)*_n_sections + (_section))
+#define _INDEX_SEC1(_neuron, _section) ((_neuron)*(_n_sections+1) + (_section))
+#define _INDEX_CHILDREN(_neuron, _child) ((_neuron)*_max_children + (_child))
 	{{support_code_lines|autoindent}}
 {% endmacro %}

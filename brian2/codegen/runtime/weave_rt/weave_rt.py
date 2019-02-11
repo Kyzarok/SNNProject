@@ -316,7 +316,7 @@ numpy version: {self.numpy_version}
                 library_dirs=self.library_dirs,
                 sources=self.additional_sources,
                 verbose=0)
-            with std_silent():
+            with std_silent(True):
                 ret_val = weave.inline(*self._inline_args, **self._inline_kwds)
             self._compiled_func = function_cache[self.annotated_code]
             self._done_first_run = True
