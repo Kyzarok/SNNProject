@@ -500,7 +500,24 @@ class SpatialNeuronGroup(NeuronGroup):
 
         return Subgroup(neuron, start, stop)
 
-SpatialNeuron = SpatialNeuronGroup
+class SpatialNeuron(SpatialNeuronGroup):
+    def __init__(self, morphology=None, model=None, threshold=None,
+                 refractory=False, reset=None, events=None,
+                 threshold_location=None,
+                 dt=None, clock=None, order=0, Cm=0.9 * uF / cm ** 2, Ri=150 * ohm * cm,
+                 name='spatialneuron*', dtype=None, namespace=None,
+                 method=('exact', 'exponential_euler', 'rk2', 'heun'),
+                 method_options=None):
+        super(SpatialNeuron, self).__init__(1, morphology=morphology,
+                                            model=model, threshold=threshold,
+                                            refractory=refractory,
+                                            reset=reset, events=events,
+                                            threshold_location=threshold_location,
+                                            dt=dt, clock=clock, order=order,
+                                            Cm=Cm, Ri=Ri, name=name,
+                                            dtype=dtype, namespace=namespace,
+                                            method=method,
+                                            method_options=method_options)
 
 
 class SpatialSubgroup(Subgroup):
