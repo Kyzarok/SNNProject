@@ -7,11 +7,10 @@ class Boid(phy.Physical):
 
     def __init__(self, *args, **kwargs): #x_start, y_start, x_target, y_target
         super(Boid, self).__init__(img=resources.boidImage, *args, **kwargs)
-        phy.Physical(x_start, y_start)
         self.heading = -math.pi/4 #start value, maybe randomize, is in radians and works of off same right aiming heading as trig funcs
-        self.rotation = 135.0 #maybe replace the maths for heading later in degrees
-        self.target_x = args[1]
-        self.target_y = args[2]
+        self.rotation = 45.0 #maybe replace the maths for heading later in degrees
+        self.target_x = 1100
+        self.target_y = 100
         self.eventHandler =[]
 
     def update(self, dt):

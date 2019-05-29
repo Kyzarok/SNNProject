@@ -1,1 +1,1 @@
-from . import boid, resources
+from game import load, boid, resources

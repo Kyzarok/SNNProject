@@ -1,5 +1,5 @@
 import numpy, pyglet, time
-from game import physicalObject, physicalWall, boid, resources
+from game import physicalObject, physicalWall, boid, resources, load
 from random import randint
 
 #dimensions for window
@@ -48,7 +48,7 @@ def init():
     coordMap = numpy.zeros((WIDTH, HEIGHT))
     
     #init obstacle
-    box = physicalWall.Square(OB_X, OB_Y)   # OB_WIDTH, OB_HEIGHT
+    #box = physicalWall.Square(x=OB_X, y=OB_Y)   # OB_WIDTH, OB_HEIGHT
     #if dimensions fit window, include obstacle in virtual map
     if (OB_X+OB_WIDTH/2<=WIDTH) and (OB_X-OB_WIDTH/2>=0) and (OB_Y+OB_HEIGHT/2<=HEIGHT) and (OB_Y-OB_HEIGHT>=0):
         for i in range (OB_X - int(OB_WIDTH/2), OB_X + int(OB_WIDTH/2)):
@@ -56,13 +56,13 @@ def init():
                 coordMap[i][j] = 1
     
     #init boid sprite
-    aBoid = boid.Boid( X_GOAL, Y_GOAL, x=X_START, y=Y_START, batch=drawBatch)
+    aBoid = boid.Boid(x=X_START, y=Y_START, batch=drawBatch) #X_GOAL, Y_GOAL, 
 
     #init obstacles
     #FILL THIS WITH A CONSTRUCTOR
-    obstacles = load.makeSquare(1, aBoid.position, drawBatch, WIDTH, HEIGHT)
+    Obstacles = load.makeSquare(1, aBoid.position, drawBatch, WIDTH, HEIGHT)
     
-    objList = [aBoid] + obstacles
+    objList = [aBoid] + Obstacles
 
     for obj in objList:
         for handler in obj.eventHandler:
