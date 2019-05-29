@@ -49,13 +49,13 @@ class Boid(phy.Physical):
         self.heading = H
         #top right
         if 0 <= H <= math.pi/2:
-            self.rotation = 90 - math.degrees(H)
+            self.rotation = 360 - math.degrees(H)
         #top left
         elif H > math.pi/2:
-            self.rotation = 450 - math.degrees(H)
+            self.rotation = 360 - math.degrees(H)
         #bottom right
         elif -math.pi/2 <= math < 0:
-            self.rotation = 90 - math.degrees(H)
+            self.rotation = - math.degrees(H)
         #bottom left
         else:  #H < -math.pi/2
             self.rotation = 90 - math.degrees(H)
