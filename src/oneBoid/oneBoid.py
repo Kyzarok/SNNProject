@@ -33,14 +33,16 @@ boidStillFlying = True
 
 drawBatch = pyglet.graphics.Batch()
 
-titleLabel = pyglet.text.Label(text='Single Boid Collision Avoidance', x=WIDTH/2, y=HEIGHT-50, batch=drawBatch)
+titleLabel = pyglet.text.Label(text='Single Boid Collision Avoidance', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
 
 aBoid=None
+obstacles=None
 objList = []
 eventStackSize = 0
 
+
 def init():
-    global aBoid, objList, eventStackSize
+    global aBoid, obstacles, objList, eventStackSize
     #map initialised with zeroes
     #if object is in that space, not zero
     #if 1, it is wall
@@ -60,15 +62,11 @@ def init():
 
     #init obstacles
     #FILL THIS WITH A CONSTRUCTOR
-    Obstacles = load.makeSquare(1, aBoid.position, drawBatch, WIDTH, HEIGHT)
+    obstacles = physicalWall.Square(x=OB_X, y=OB_Y, batch=drawBatch)
     
-    objList = [aBoid] + Obstacles
+    objList=[aBoid] +[obstacles]
 
-    for obj in objList:
-        for handler in obj.eventHandler:
-            gameWindow.push_handlers(handler)
-            eventStackSize += 1
-    
+    #no event handlers necessary as no keyboard or mouse input
 
 @gameWindow.event
 def on_draw():
@@ -83,14 +81,14 @@ def navigateBoid(thisBoid):
     
 def update(dt):
     global objList
-    for i in range(len(objList)):
-        for j in range(i+1, len(objList)):
-            obj_1 = objList[i]
-            obj_2 = objList[j]
-        if not obj_1.collision and not obj_2.collision:
-            if obj_1.collidesWith(obj_2):
-                obj_1.handleCollisionWith(obj_2)
-                obj_2.handleCollisionWith(obj_1)
+    # for i in range(len(objList)):
+    #     for j in range(i+1, len(objList)):
+    #         obj_1 = objList[i]
+    #         obj_2 = objList[j]
+    #     if not obj_1.collision and not obj_2.collision:
+    #         if obj_1.collidesWith(obj_2):
+    #             obj_1.handleCollisionWith(obj_2)
+    #             obj_2.handleCollisionWith(obj_1)
 
     for obj in objList:
         obj.update(dt)

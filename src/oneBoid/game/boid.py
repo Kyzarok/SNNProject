@@ -11,15 +11,16 @@ class Boid(phy.Physical):
         self.rotation = 45.0 #maybe replace the maths for heading later in degrees
         self.target_x = 1100
         self.target_y = 100
-        self.eventHandler =[]
+        self.velocity_x = 10.0
+        self.velocity_y = -10.0
 
     def update(self, dt):
         #mathematically correct update function
         super(Boid, self).update(dt)
-
         #in the asteroid example, on an arrow key press the boid would rotate
         #here, the rotation angle will depend on the weightings
-        
+        self.x = self.velocity_x * dt
+        self.y = self.velocity_y * dt
         
         #here will be where we update the velocity
         #heading correction has already occured

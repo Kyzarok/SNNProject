@@ -7,14 +7,11 @@ class Physical(pyglet.sprite.Sprite):
     def __init__(self, *args, **kwargs): #x_start, y_start
         super(Physical, self).__init__(*args, **kwargs)
         self.collision = False
-        self.x_velocity = 0.0
-        self.y_velocity = 0.0
+        self.velocity_x = 0.0
+        self.velocity_y = 0.0
         self.eventHandler = []
 
     def update(self, dt):
-        #self.x += self.x_velocity * dt
-        #self.y += self.y_veloctiy * dt
-        # self.checkBounds()
         pass
 
     # def checkBounds(self):
