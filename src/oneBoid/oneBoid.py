@@ -121,5 +121,5 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 1/120)
+    pyglet.clock.schedule_interval(update, 1/0.5)
     pyglet.app.run()
