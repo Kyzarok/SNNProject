@@ -86,7 +86,7 @@ def navigateBoid():
     nearestBoidHeading = 0
 
     #weights for further calibration
-    WEIGHT_OPTIMAL = 0.1
+    WEIGHT_OPTIMAL = 0.001
     WEIGHT_BOID = 0.0
     #the boids will only take the effort to avoid the boid nearest to it
 
