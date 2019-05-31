@@ -19,35 +19,35 @@ class Square(phy.Physical):
         # | b1 | NA | b3 |
         # | c1 | c2 | c3 |
 
-        if self.x - self.image.width/2 <= boid_x < self.x + self.image.width/2:
+        if self.x - self.image.width/2*self.scale <= boid_x < self.x + self.image.width/2*self.scale:
             #a2
-            if boid_y > self.y+self.image.height/2:
-                shortestDistance = boid_y - (self.image.height/2 + self.y)
+            if boid_y > self.y+self.image.height/2*self.scale :
+                shortestDistance = boid_y - (self.image.height/2*self.scale + self.y)
             #c2
             else:
-                shortestDistance = (self.y - self.image.height/2) - boid_y
+                shortestDistance = (self.y - self.image.height/2*self.scale ) - boid_y
         #a1, b1, c1
-        elif boid_x < self.x - self.image.width/2:
+        elif boid_x < self.x - self.image.width/2*self.scale :
             #a1
-            if boid_y > self.y + self.image.height/2:
-                shortestDistance = util.distance((boid_x, boid_y),(self.x - self.image.width/2, self.y + self.image.height/2))
+            if boid_y > self.y + self.image.height/2*self.scale :
+                shortestDistance = util.distance((boid_x, boid_y),(self.x - self.image.width/2*self.scale , self.y + self.image.height/2*self.scale ))
             #b1
-            elif self.y - self.image.height/2 <= boid_y <= self.y + self.image.height/2:
-                shortestDistance = self.x - self.image.width/2 - boid_x
+            elif self.y - self.image.height/2*self.scale  <= boid_y <= self.y + self.image.height/2*self.scale :
+                shortestDistance = self.x - self.image.width/2*self.scale  - boid_x
             #c1
             else:
-                shortestDistance = util.distance((boid_x, boid_y),(self.x - self.image.width/2, self.y - self.image.height/2))
+                shortestDistance = util.distance((boid_x, boid_y),(self.x - self.image.width/2*self.scale , self.y - self.image.height/2*self.scale ))
         #a3, b3, c3
         else:
             #a3
-            if boid_y > self.y + self.image.height/2:
-                shortestDistance = util.distance((boid_x, boid_y),(self.x + self.image.width/2, self.y + self.image.height/2))
+            if boid_y > self.y + self.image.height/2*self.scale :
+                shortestDistance = util.distance((boid_x, boid_y),(self.x + self.image.width/2*self.scale , self.y + self.image.height/2*self.scale ))
             #b3
-            elif self.y - self.image.height/2 <= boid_y <= self.y + self.image.height/2:
-                shortestDistance = boid_x - (self.x + self.image.width/2)
+            elif self.y - self.image.height/2*self.scale  <= boid_y <= self.y + self.image.height/2*self.scale :
+                shortestDistance = boid_x - (self.x + self.image.width/2*self.scale )
             #c3
             else:
-                shortestDistance = util.distance((boid_x, boid_y),(self.x + self.image.width/2, self.y - self.image.height/2))
+                shortestDistance = util.distance((boid_x, boid_y),(self.x + self.image.width/2*self.scale , self.y - self.image.height/2*self.scale ))
 
         return shortestDistance
     
@@ -59,16 +59,16 @@ class Square(phy.Physical):
         cpos = self.y - m*self.x
         cneg = self.y + m*self.x
 
-        if (boid_y > self.y + self.image.height/2) and (boid_y > (m*boid_x) + cpos) and (boid_y > (-m*boid_x) + cneg):
+        if (boid_y > self.y + self.image.height/2*self.scale ) and (boid_y > (m*boid_x) + cpos) and (boid_y > (-m*boid_x) + cneg):
             offsetVX = -repulsionSpeed
             offsetVY = repulsionSpeed
-        elif (boid_y < self.y - self.image.height/2) and (boid_y < (m*boid_x) + cpos) and (boid_y < (-m*boid_x) + cneg):
+        elif (boid_y < self.y - self.image.height/2*self.scale ) and (boid_y < (m*boid_x) + cpos) and (boid_y < (-m*boid_x) + cneg):
             offsetVX = repulsionSpeed
             offsetVY = -repulsionSpeed
-        elif boid_x < self.x - self.image.width/2:
+        elif boid_x < self.x - self.image.width/2*self.scale :
             offsetVX = -repulsionSpeed
             offsetVY = -repulsionSpeed
-        elif boid_x > self.x + self.image.width/2:
+        elif boid_x > self.x + self.image.width/2*self.scale :
             offsetVX = -repulsionSpeed
             offsetVY = -repulsionSpeed
         else:
@@ -80,3 +80,5 @@ class Square(phy.Physical):
     def handleCollisionWith(self, otherObject):
         super(Square, self).handleCollisionWith(otherObject)
     
+    def setScale(self, scale):
+        self.scale = scale

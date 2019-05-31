@@ -26,8 +26,16 @@ class Boid(phy.Physical):
 
     def correctVelocities(self, OP_weight, OB_weight, offset_x, offset_y):
         v_x, v_y = 0.0, 0.0
-        v_x = (OP_weight * self.velocity_x) + (OB_weight * offset_x)
-        v_y = (OP_weight * self.velocity_y) + (OB_weight * offset_y)
+
+        offsetTotal_x = 0.0
+        offsetTotal_y = 0.0
+        for i in OB_weight:
+            for j in range(len(offset_x)):
+                offsetTotal_x += i * offset_x[j]
+                offsetTotal_y += i * offset_y[j]
+
+        v_x = (OP_weight * self.velocity_x) + offsetTotal_x
+        v_y = (OP_weight * self.velocity_y) + offsetTotal_y
 
         newAngle = math.atan2(v_y, v_x)
         print('new angle: ' +str(newAngle))
