@@ -12,11 +12,6 @@ Y_START = 800
 X_GOAL = 1100
 Y_GOAL = 100
 
-#weights for further calibration
-WEIGHT_OPTIMAL = 0.8 #temporary, most likely 1 minus the other two weights
-WEIGHT_OBSTACLE = 0.1 #this will use the inverse 
-WEIGHT_BOID = 0.1
-#the boids will only take the effort to avoid the boid nearest to it
 
 #coords and dimensions for rectangular obstacle
 numOfObs = 1
@@ -37,25 +32,26 @@ titleLabel = pyglet.text.Label(text='Single Boid Collision Avoidance', x=WIDTH/2
 
 aBoid=None
 obstacles=None
-objList = []
+boidList = []
+obList = []
 eventStackSize = 0
 
 
 def init():
-    global aBoid, obstacles, objList, eventStackSize
+    global aBoid, obstacles, boidList, obList, eventStackSize
     #map initialised with zeroes
     #if object is in that space, not zero
     #if 1, it is wall
     #if 2, it is a boid
-    coordMap = numpy.zeros((WIDTH, HEIGHT))
+    #coordMap = numpy.zeros((WIDTH, HEIGHT))
     
     #init obstacle
     #box = physicalWall.Square(x=OB_X, y=OB_Y)   # OB_WIDTH, OB_HEIGHT
     #if dimensions fit window, include obstacle in virtual map
-    if (OB_X+OB_WIDTH/2<=WIDTH) and (OB_X-OB_WIDTH/2>=0) and (OB_Y+OB_HEIGHT/2<=HEIGHT) and (OB_Y-OB_HEIGHT>=0):
-        for i in range (OB_X - int(OB_WIDTH/2), OB_X + int(OB_WIDTH/2)):
-            for j in range (OB_Y - int(OB_HEIGHT/2), OB_Y + int(OB_HEIGHT/2)):
-                coordMap[i][j] = 1
+    # if (OB_X+OB_WIDTH/2<=WIDTH) and (OB_X-OB_WIDTH/2>=0) and (OB_Y+OB_HEIGHT/2<=HEIGHT) and (OB_Y-OB_HEIGHT>=0):
+    #     for i in range (OB_X - int(OB_WIDTH/2), OB_X + int(OB_WIDTH/2)):
+    #         for j in range (OB_Y - int(OB_HEIGHT/2), OB_Y + int(OB_HEIGHT/2)):
+    #             coordMap[i][j] = 1
     
     #init boid sprite
     aBoid = boid.Boid(x=X_START, y=Y_START, batch=drawBatch) #X_GOAL, Y_GOAL, 
@@ -64,7 +60,11 @@ def init():
     #FILL THIS WITH A CONSTRUCTOR
     obstacles = physicalWall.Square(x=OB_X, y=OB_Y, batch=drawBatch)
     
-    objList=[aBoid] +[obstacles]
+    #listed this way as later there will be a list of boids and it will be easier if we knew the index of the obstacles
+    #or maybe I should just make two game object lists........ that's not a bad idea, could test boids on their own
+    #yeah I'll do that - musings@19:06 30/05/2019
+    obList = [obstacles]
+    boidList = [aBoid]
 
     #no event handlers necessary as no keyboard or mouse input
 
@@ -73,14 +73,39 @@ def on_draw():
     gameWindow.clear()
     drawBatch.draw()
 
-def navigateBoid(thisBoid):
+def normalise(W_OP, W_OB, W_B):
+    total = W_OP + W_OB + W_B
+    retList = [W_OP/total, W_OB/total, W_B/total]
+    return retList
+
+def navigateBoid():
+    global boidList, obList
     #so this function's job is to correctly orientate the heading of the boid
     #the core equation needs to account for other obstacles as well as opitmal heading
-    heading = (WEIGHT_OPTIMAL * thisBoid.optimalHeading()) + (WEIGHT_OBSTACLE * 0) + (WEIGHT_BOID * 0) 
-    thisBoid.setHandR(heading)
+    
+    nearestBoidHeading = 0
+
+    #weights for further calibration
+    WEIGHT_OPTIMAL = 1.0
+    WEIGHT_BOID = 0.0
+    #the boids will only take the effort to avoid the boid nearest to it
+
+    for burd in boidList:
+        WEIGHT_OBSTACLE = 0.0 #this will use the inverse 
+        b_x, b_y = burd.getPos()
+        for ob in obList:
+            #get the distance from the boid to the obstacle
+            boidToSquare, avoidanceRotation = ob.avoidance(b_x, b_y)
+            #get the inverse square
+            WEIGHT_OBSTACLE = 1/((boidToSquare) ** 2)
+            WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, WEIGHT_BOID = normalise(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, WEIGHT_BOID)
+            print('weigths(OP, OB,. B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE) + ' ' + str(WEIGHT_BOID))
+            heading = (WEIGHT_OPTIMAL * burd.optimalHeading()) + (WEIGHT_OBSTACLE * avoidanceRotation) + (WEIGHT_BOID * nearestBoidHeading)
+            print('new heading is: ' + str(heading))
+            burd.setHandR(heading)
     
 def update(dt):
-    global objList
+    global boidList, obList
     # for i in range(len(objList)):
     #     for j in range(i+1, len(objList)):
     #         obj_1 = objList[i]
@@ -90,7 +115,12 @@ def update(dt):
     #             obj_1.handleCollisionWith(obj_2)
     #             obj_2.handleCollisionWith(obj_1)
 
-    for obj in objList:
+    navigateBoid()
+
+    gameList = obList + boidList
+
+    for obj in gameList:
+        obj.correctVelocities()
         obj.update(dt)
 
     #need to draw the obstacles as well
