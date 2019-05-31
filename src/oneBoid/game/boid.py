@@ -7,13 +7,13 @@ class Boid(phy.Physical):
 
     def __init__(self, *args, **kwargs): #x_start, y_start, x_target, y_target
         super(Boid, self).__init__(img=resources.boidImage, *args, **kwargs)
-        self.image.scale = 0.25
+        self.scale = 0.5
         self.heading = -math.pi/4 #start value, maybe randomize, is in radians and works of off same right aiming heading as trig funcs
         self.rotation = 45.0 #maybe replace the maths for heading later in degrees
         self.target_x = 1100
         self.target_y = 100
-        self.velocity_x = 10.0
-        self.velocity_y = -10.0
+        self.velocity_x = 20.0
+        self.velocity_y = -20.0
         self.resultantVelocity = 0.0
 
     def sign(self, a):
@@ -46,7 +46,7 @@ class Boid(phy.Physical):
         diff_x = self.x - self.target_x
         diff_y = self.y - self.target_y 
         angleToDest = math.atan2(diff_y,diff_x)
-        print('angleToDest: ' + str(angleToDest))
+        #print('angleToDest: ' + str(angleToDest))
 
         #top
         if 0 <= angleToDest:
@@ -54,7 +54,7 @@ class Boid(phy.Physical):
         #bottom
         else:
             bestHeading = math.pi + angleToDest
-        print('best heading is: ' + str(bestHeading))
+        #print('best heading is: ' + str(bestHeading))
         return bestHeading
 
     def setHandR(self, H):

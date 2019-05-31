@@ -86,7 +86,7 @@ def navigateBoid():
     nearestBoidHeading = 0
 
     #weights for further calibration
-    WEIGHT_OPTIMAL = 0.01
+    WEIGHT_OPTIMAL = 0.1
     WEIGHT_BOID = 0.0
     #the boids will only take the effort to avoid the boid nearest to it
 
@@ -95,13 +95,12 @@ def navigateBoid():
         b_x, b_y = burd.getPos()
         for ob in obList:
             #get the distance from the boid to the obstacle
-            boidToSquare, avoidanceRotation = ob.avoidance(b_x, b_y)
-            #get the inverse square
+            boidToSquare, avoidanceHeading = ob.avoidance(b_x, b_y)
             WEIGHT_OBSTACLE = 1/((boidToSquare) ** 2)
             WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, WEIGHT_BOID = normalise(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, WEIGHT_BOID)
-            print('weigths(OP, OB,. B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE) + ' ' + str(WEIGHT_BOID))
-            heading = (WEIGHT_OPTIMAL * burd.optimalHeading()) + (WEIGHT_OBSTACLE * avoidanceRotation) + (WEIGHT_BOID * nearestBoidHeading)
-            print('new heading is: ' + str(heading))
+            print('weights(OP, OB, B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE) + ' ' + str(WEIGHT_BOID))
+            heading = (WEIGHT_OPTIMAL * burd.optimalHeading()) + (WEIGHT_OBSTACLE * avoidanceHeading) + (WEIGHT_BOID * nearestBoidHeading)
+            print('resultant heading is: ' + str(heading))
             burd.setHandR(heading)
     
 def update(dt):
@@ -151,5 +150,5 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 1/0.5)
+    pyglet.clock.schedule_interval(update, 1/4)
     pyglet.app.run()
