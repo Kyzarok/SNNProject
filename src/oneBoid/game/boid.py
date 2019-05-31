@@ -12,9 +12,9 @@ class Boid(phy.Physical):
         self.rotation = 45.0 #maybe replace the maths for heading later in degrees
         self.target_x = 1100
         self.target_y = 100
-        self.velocity_x = 20.0
-        self.velocity_y = -20.0
-        self.resultantVelocity = 0.0
+        self.velocity_x = 5.0
+        self.velocity_y = -5.0
+        self.resV = (self.velocity_x**2) + (self.velocity_y**2)
 
     def sign(self, a):
         if a > 0:
@@ -24,11 +24,20 @@ class Boid(phy.Physical):
         else:
             return 0
 
-    def correctVelocities(self):
-        super(Boid,self).correctVelocities()
-        self.resultantVelocity = math.sqrt(self.velocity_x**2 + self.velocity_y**2)
-        self.velocity_x = self.resultantVelocity * math.cos(self.heading)
-        self.velocity_y = self.resultantVelocity * math.sin(self.heading)
+    def correctVelocities(self, OP_weight, OB_weight, offset_x, offset_y):
+        v_x, v_y = 0.0, 0.0
+        v_x = (OP_weight * self.velocity_x) + (OB_weight * offset_x)
+        v_y = (OP_weight * self.velocity_y) + (OB_weight * offset_y)
+
+        newAngle = math.atan2(v_y, v_x)
+        print('new angle: ' +str(newAngle))
+        if 0 <= newAngle:
+            self.rotation = 360 - math.degrees(newAngle)
+        else:
+            self.rotation = -math.degrees(newAngle)
+        
+        self.velocity_x = self.resV * math.cos(newAngle)
+        self.velocity_y = self.resV * math.sin(newAngle)
 
     def update(self, dt):
         #mathematically correct update function
@@ -41,7 +50,7 @@ class Boid(phy.Physical):
         #here will be where we update the velocity
         #heading correction has already occured
 
-    def optimalHeading(self):
+    def setToOptimalHeading(self):
         #optimal orientation: 
         diff_x = self.x - self.target_x
         diff_y = self.y - self.target_y 
@@ -55,7 +64,10 @@ class Boid(phy.Physical):
         else:
             bestHeading = math.pi + angleToDest
         #print('best heading is: ' + str(bestHeading))
-        return bestHeading
+
+        self.velocity_x = self.resV * math.cos(bestHeading)
+        self.velocity_y = self.resV * math.sin(bestHeading)
+        print('best heading is: ' + str(bestHeading))
 
     def setHandR(self, H):
         self.heading = H

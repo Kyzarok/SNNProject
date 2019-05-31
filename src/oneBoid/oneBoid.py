@@ -16,7 +16,7 @@ Y_GOAL = 100
 #coords and dimensions for rectangular obstacle
 numOfObs = 1
 OB_X = 450
-OB_Y = 450
+OB_Y = 600
 OB_WIDTH = 300
 OB_HEIGHT = 300
 
@@ -29,6 +29,8 @@ boidStillFlying = True
 drawBatch = pyglet.graphics.Batch()
 
 titleLabel = pyglet.text.Label(text='Single Boid Collision Avoidance', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
+goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL, y=Y_GOAL, batch=drawBatch)
+
 
 aBoid=None
 obstacles=None
@@ -95,13 +97,25 @@ def navigateBoid():
         b_x, b_y = burd.getPos()
         for ob in obList:
             #get the distance from the boid to the obstacle
-            boidToSquare, avoidanceHeading = ob.avoidance(b_x, b_y)
-            WEIGHT_OBSTACLE = 1/((boidToSquare) ** 2)
+            boidToSquare = ob.avoidance(b_x, b_y)
+            if boidToSquare < 150:
+                offset_x, offset_y = ob.offsetVelocities(b_x, b_y)
+                WEIGHT_OBSTACLE = 1/((0.3*boidToSquare) ** 2)
+            else:
+                offset_x, offset_y = 0.0, 0.0
+                WEIGHT_OBSTACLE = 0.0
+
             WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, WEIGHT_BOID = normalise(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, WEIGHT_BOID)
             print('weights(OP, OB, B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE) + ' ' + str(WEIGHT_BOID))
-            heading = (WEIGHT_OPTIMAL * burd.optimalHeading()) + (WEIGHT_OBSTACLE * avoidanceHeading) + (WEIGHT_BOID * nearestBoidHeading)
-            print('resultant heading is: ' + str(heading))
-            burd.setHandR(heading)
+
+            burd.setToOptimalHeading()
+
+            #heading = (WEIGHT_OPTIMAL * burd.optimalHeading()) + (WEIGHT_OBSTACLE * avoidanceHeading) + (WEIGHT_BOID * nearestBoidHeading)
+
+            burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, offset_x, offset_y)
+
+            #print('resultant heading is: ' + str(heading))
+            # burd.setHandR(heading)
     
 def update(dt):
     global boidList, obList
@@ -119,7 +133,6 @@ def update(dt):
     gameList = obList + boidList
 
     for obj in gameList:
-        obj.correctVelocities()
         obj.update(dt)
 
     #need to draw the obstacles as well

@@ -37,7 +37,3 @@ class Physical(pyglet.sprite.Sprite):
     def handleCollisionWith(self, otherObject):
         if otherObject.__class__ is not self.__class__:
             self.collision = True
-
-
-    def correctVelocities(self):
-        pass
