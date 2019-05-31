@@ -69,15 +69,6 @@ class Boid(phy.Physical):
         self.velocity_y = self.resV * math.sin(bestHeading)
         print('best heading is: ' + str(bestHeading))
 
-    def setHandR(self, H):
-        self.heading = H
-        #top
-        if 0 <= H :
-            self.rotation = 360 - math.degrees(H)
-        #bottom
-        else:  #H < 0
-            self.rotation = - math.degrees(H)
-
     def getPos(self):
         return self.position
 
