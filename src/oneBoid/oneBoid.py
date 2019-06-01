@@ -30,7 +30,7 @@ boidStillFlying = True
 drawBatch = pyglet.graphics.Batch()
 
 titleLabel = pyglet.text.Label(text='Single Boid Collision Avoidance', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
-goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL, y=Y_GOAL, batch=drawBatch)
+goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch=drawBatch)
 mLabel = pyglet.text.Label(text='Maverick', x=X_START, y=Y_START, batch=drawBatch)
 gLabel = pyglet.text.Label(text='Goose', x=X_START + 50, y=Y_START - 50, batch=drawBatch)
 
@@ -47,7 +47,8 @@ def init():
     
     #init boid sprites
     maverick = boid.Boid(x=X_START, y=Y_START, batch=drawBatch) #X_GOAL, Y_GOAL, 
-    goose = boid.Boid(x=X_START + 50, y=Y_START - 50, batch=drawBatch)
+    goose = boid.Boid(x=X_START + 50, y=Y_START-50, batch=drawBatch)
+    #nirvash = boid.Boid(x=X_START + 20, y=Y_START - 20, batch=drawBatch)
 
     #will need an initialiser that ensures they are far apart when they start
 
@@ -61,7 +62,7 @@ def init():
     #or maybe I should just make two game object lists........ that's not a bad idea, could test boids on their own
     #yeah I'll do that - musings@19:06 30/05/2019
     obList = [square_1, square_2]
-    boidList = [maverick, goose]
+    boidList = [maverick, goose]#, nirvash]
 
     #no event handlers necessary as no keyboard or mouse input
 
@@ -77,10 +78,10 @@ def on_draw():
     # gLabel.y = g_y
     drawBatch.draw()
 
-def normalise(W_OP, W_OB, W_B):
-    total = W_OP + sum(W_OB) + W_B
-    W_OB = [w / total for w in W_OB]
-    retList = [W_OP/total, W_OB, W_B/total]
+def normalise(W_OP, W_OB_B):
+    total = W_OP + sum(W_OB_B)
+    W_OB_B = [w / total for w in W_OB_B]
+    retList = [W_OP/total, W_OB_B]
     return retList
 
 def navigateBoids():
@@ -94,29 +95,45 @@ def navigateBoids():
     
     for burd in boidList:
         #weights for further calibration
-        WEIGHT_BOID = 0.0
         WEIGHT_OPTIMAL = 0.001
-        WEIGHT_OBSTACLE = [0.0] * len(obList) #this will use the inverse
-        offset_x = [0.0] * len(obList)
-        offset_y = [0.0] * len(obList)
+        WEIGHT_OBSTACLE_BOID = [0.0] * (len(obList) + len(boidList) - 1) #this will use the inverse
+        offset_x = [0.0] * (len(obList) + len(boidList) - 1)
+        offset_y = [0.0] * (len(obList) + len(boidList) - 1)
         index = 0
+
         for ob in obList:
             b_x, b_y = burd.getPos()
             #get the distance from the boid to the obstacle
-            boidToSquare = ob.avoidance(b_x, b_y)
-            if boidToSquare < 150:
+            boidToSquare = ob.shortestDistance(b_x, b_y)
+            if boidToSquare < (120*ob.getScale()):
                 offset_x[index], offset_y[index] = ob.offsetVelocities(b_x, b_y)
-                WEIGHT_OBSTACLE[index] = 1/((0.3*boidToSquare) ** 2)
+                WEIGHT_OBSTACLE_BOID[index] = 1/((0.7*boidToSquare) ** 2)
             else:
                 offset_x[index], offset_y[index] = 0.0, 0.0
-                WEIGHT_OBSTACLE[index] = 0.0
+                WEIGHT_OBSTACLE_BOID[index] = 0.0
             index += 1
 
-        WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, WEIGHT_BOID = normalise(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, WEIGHT_BOID)
-        print('weights(OP, OB, B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE) + ' ' + str(WEIGHT_BOID))
+        for otherBurds in boidList:
+            if burd != otherBurds:
+                #print('avoiding')
+                b_x, b_y = otherBurds.getPos()
+                boidToBoid = burd.shortestDistance(b_x, b_y)
+                #print('distance between boids: ' + str(boidToBoid))
+                if boidToBoid < 25:
+                    offset_x[index], offset_y[index] = ob.offsetVelocities(b_x, b_y)
+                    WEIGHT_OBSTACLE_BOID[index] = 1/((boidToBoid) ** 2)
+                else:
+                    offset_x[index], offset_y[index] = 0.0, 0.0
+                    WEIGHT_OBSTACLE_BOID[index] = 0.0
+                index += 1
+            #else:
+                #print('ignoring')
+
+        WEIGHT_OPTIMAL, WEIGHT_OBSTACLE_BOID = normalise(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE_BOID)
+        print('weights(OP, OB, B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE_BOID))
 
         burd.setToOptimalHeading()
-        burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, offset_x, offset_y)
+        burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE_BOID, offset_x, offset_y)
     
 def update(dt):
     global boidList, obList
@@ -147,5 +164,5 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 1/4)
+    pyglet.clock.schedule_interval(update, 1/3)
     pyglet.app.run()

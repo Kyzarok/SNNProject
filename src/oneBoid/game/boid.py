@@ -1,7 +1,7 @@
 #Class inheriting from physcialObject.py
 from game import physicalObject as phy
 import pyglet, math
-from game import resources
+from game import resources, util
 
 class Boid(phy.Physical):
 
@@ -12,9 +12,9 @@ class Boid(phy.Physical):
         self.rotation = 45.0 #maybe replace the maths for heading later in degrees
         self.target_x = 1100
         self.target_y = 100
-        self.velocity_x = 5.0
-        self.velocity_y = -5.0
-        self.resV = (self.velocity_x**2) + (self.velocity_y**2)
+        self.resV = 40.0
+        self.velocity_x = self.resV * math.cos(self.heading)
+        self.velocity_y = self.resV * math.sin(self.heading)
 
     def sign(self, a):
         if a > 0:
@@ -24,15 +24,14 @@ class Boid(phy.Physical):
         else:
             return 0
 
-    def correctVelocities(self, OP_weight, OB_weight, offset_x, offset_y):
+    def correctVelocities(self, OP_weight, OB_B_weight, offset_x, offset_y):
         v_x, v_y = 0.0, 0.0
 
         offsetTotal_x = 0.0
         offsetTotal_y = 0.0
-        for i in OB_weight:
-            for j in range(len(offset_x)):
-                offsetTotal_x += i * offset_x[j]
-                offsetTotal_y += i * offset_y[j]
+        for i in range(len(OB_B_weight)):
+            offsetTotal_x += OB_B_weight[i] * offset_x[i]
+            offsetTotal_y += OB_B_weight[i] * offset_y[i]
 
         v_x = (OP_weight * self.velocity_x) + offsetTotal_x
         v_y = (OP_weight * self.velocity_y) + offsetTotal_y
@@ -71,7 +70,6 @@ class Boid(phy.Physical):
         #bottom
         else:
             bestHeading = math.pi + angleToDest
-        #print('best heading is: ' + str(bestHeading))
 
         self.velocity_x = self.resV * math.cos(bestHeading)
         self.velocity_y = self.resV * math.sin(bestHeading)
@@ -80,5 +78,59 @@ class Boid(phy.Physical):
     def getPos(self):
         return self.position
 
-    #def avoidObstacle(self):
+    def shortestDistance(self, boid_x, boid_y):
+        shortestDistance = 0.0
+        # | a1 | a2 | a3 |
+        # | b1 | NA | b3 |
+        # | c1 | c2 | c3 |
+
+        if self.x - self.image.width/2*self.scale <= boid_x < self.x + self.image.width/2*self.scale:
+            #a2
+            if boid_y > self.y+self.image.height/2*self.scale :
+                shortestDistance = boid_y - (self.image.height/2*self.scale + self.y)
+            #c2
+            else:
+                shortestDistance = (self.y - self.image.height/2*self.scale ) - boid_y
+        #a1, b1, c1
+        elif boid_x < self.x - self.image.width/2*self.scale :
+            #a1
+            if boid_y > self.y + self.image.height/2*self.scale :
+                shortestDistance = util.distance((boid_x, boid_y),(self.x - self.image.width/2*self.scale , self.y + self.image.height/2*self.scale ))
+            #b1
+            elif self.y - self.image.height/2*self.scale  <= boid_y <= self.y + self.image.height/2*self.scale :
+                shortestDistance = self.x - self.image.width/2*self.scale  - boid_x
+            #c1
+            else:
+                shortestDistance = util.distance((boid_x, boid_y),(self.x - self.image.width/2*self.scale , self.y - self.image.height/2*self.scale ))
+        #a3, b3, c3
+        else:
+            #a3
+            if boid_y > self.y + self.image.height/2*self.scale :
+                shortestDistance = util.distance((boid_x, boid_y),(self.x + self.image.width/2*self.scale , self.y + self.image.height/2*self.scale ))
+            #b3
+            elif self.y - self.image.height/2*self.scale  <= boid_y <= self.y + self.image.height/2*self.scale :
+                shortestDistance = boid_x - (self.x + self.image.width/2*self.scale )
+            #c3
+            else:
+                shortestDistance = util.distance((boid_x, boid_y),(self.x + self.image.width/2*self.scale , self.y - self.image.height/2*self.scale ))
+
+        return shortestDistance
+    
+    def offsetVelocities(self, otherBoid_x, otherBoid_y):
+        offsetVX, offsetVY = 0.0, 0.0
+        repulsionSpeed = self.resV
+        diff_x = otherBoid_x - self.x
+        diff_y = otherBoid_y - self.y
+        #angle between the two boids
+        perpAngle = math.atan2(diff_y, diff_x)
+        #as the boid will be heading in a certain direction, we adjust for heading
+        diffHeading = perpAngle - self.heading
+        if diffHeading < math.pi:
+            diffHeading = 2*math.pi + diffHeading
+
+        if abs(diffHeading) < 0.75*math.pi: #considered range
+            offsetVX = repulsionSpeed * math.cos(diffHeading)
+            offsetVY = repulsionSpeed * math.sin(diffHeading)
+
+        return offsetVX, offsetVY
         

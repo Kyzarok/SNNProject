@@ -11,7 +11,7 @@ class Square(phy.Physical):
     def update(self, dt):
         super(Square, self).update(dt)
         
-    def avoidance(self, boid_x, boid_y):
+    def shortestDistance(self, boid_x, boid_y):
         #circle around point, will need to do this for each point around the actual surface
         #calculate distance of point from each wall, find shortest one
         shortestDistance = 0.0
@@ -53,26 +53,30 @@ class Square(phy.Physical):
     
     def offsetVelocities(self, boid_x, boid_y):
         offsetVX, offsetVY = 0.0, 0.0
-        repulsionSpeed = 5.0
-        #line function
-        m = self.image.height/self.image.width
-        cpos = self.y - m*self.x
-        cneg = self.y + m*self.x
+        repulsionSpeed = 40.0
+        # #line function
+        # m = self.image.height/self.image.width
+        # cpos = self.y - m*self.x
+        # cneg = self.y + m*self.x
 
-        if (boid_y > self.y + self.image.height/2*self.scale ) and (boid_y > (m*boid_x) + cpos) and (boid_y > (-m*boid_x) + cneg):
-            offsetVX = -repulsionSpeed
-            offsetVY = repulsionSpeed
-        elif (boid_y < self.y - self.image.height/2*self.scale ) and (boid_y < (m*boid_x) + cpos) and (boid_y < (-m*boid_x) + cneg):
-            offsetVX = repulsionSpeed
-            offsetVY = -repulsionSpeed
-        elif boid_x < self.x - self.image.width/2*self.scale :
-            offsetVX = -repulsionSpeed
-            offsetVY = -repulsionSpeed
-        elif boid_x > self.x + self.image.width/2*self.scale :
-            offsetVX = -repulsionSpeed
-            offsetVY = -repulsionSpeed
-        else:
-            print('touching or inside SQUARE')
+        diff_x, diff_y = 0.0, 0.0
+
+        if boid_y > self.y + self.image.height/2*self.scale:
+            diff_y = boid_y - (self.y + self.image.height/2*self.scale)
+
+        elif boid_y < self.y - self.image.height/2*self.scale:
+            diff_y = boid_y - (self.y - self.image.height/2*self.scale)
+
+        if boid_x < self.x - self.image.width/2*self.scale:
+            diff_x = boid_x - (self.x - self.image.width/2*self.scale)
+
+        elif boid_x > self.x + self.image.width/2*self.scale:
+            diff_x = boid_x - (self.x + self.image.width/2*self.scale)
+
+        diffHeading = math.atan2(diff_y, diff_x)
+
+        offsetVX = repulsionSpeed * math.cos(diffHeading)
+        offsetVY = repulsionSpeed * math.sin(diffHeading)
 
         return offsetVX, offsetVY
 
@@ -82,3 +86,6 @@ class Square(phy.Physical):
     
     def setScale(self, scale):
         self.scale = scale
+    
+    def getScale(self):
+        return self.scale
