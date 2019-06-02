@@ -1,17 +1,15 @@
 import numpy, pyglet, time, random
-from game import physicalObject, physicalWall, boid, resources, load
+from game import physicalObject, physicalWall, boid, resources, load, util
 
 #dimensions for window
 WIDTH = 1200
 HEIGHT = 900
 
 #start and end coords, WIDTH-
-X_START = 100
-Y_START = 800
+X_START = 50
+Y_START = 850
 X_GOAL = 1100
 Y_GOAL = 100
-
-BOID_NUMBER = 6
 
 #coords and dimensions for rectangular obstacle
 OB_1_X = random.randint(200, 1000)
@@ -41,20 +39,23 @@ eventStackSize = 0
 
 def init():
     global obstacles, boidList, obList, eventStackSize
+    BOID_NUMBER = int(input('enter number of boids: '))
+    print(str(BOID_NUMBER))
     
-    #init boid sprites
-    for i in range(int(BOID_NUMBER/2)):
-        for j in range(int(BOID_NUMBER/2)):
-            aBoid = boid.Boid(x=X_START + i*20, y=Y_START - j*20, batch=drawBatch)
-            boidList.append(aBoid)
-
-
-    # nimbus = boid.Boid(x=X_START, y=Y_START, batch=drawBatch) #X_GOAL, Y_GOAL, 
-    # serenity = boid.Boid(x=X_START+50, y=Y_START-20, batch=drawBatch)
-    # nirvash = boid.Boid(x=X_START+20, y=Y_START-50, batch=drawBatch)
-    # blue_beetle = boid.Boid(x=X_START-50, y=Y_START+20, batch=drawBatch)
-    # red_five = boid.Boid(x=X_START-20, y=Y_START+50, batch=drawBatch)
-    # mehve = boid.Boid(x=random.randint(0,50), y=random.randint(820, 880), batch=drawBatch)
+    i = 0
+    while i < BOID_NUMBER:
+        b_x = random.randint(X_START - 50, X_START + 50)
+        b_y = random.randint(Y_START - 50, Y_START + 50)
+        new_boid = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
+        append = True
+        for burd in boidList:
+            if util.distance(new_boid.getPos(), burd.getPos()) < 30:
+                append = False
+        if append:
+            boidList.append(new_boid)
+        else:
+            i-=1
+        i+=1
 
     #will need an initialiser that ensures they are far apart when they start
 
@@ -154,6 +155,8 @@ def update(dt):
             if gameObj_1.collidesWith(gameObj_2):
                 gameObj_1.handleCollisionWith(gameObj_2)
                 gameObj_2.handleCollisionWith(gameObj_1)
+                print('COLLISION')
+                exit()
 
     navigateBoids()
 

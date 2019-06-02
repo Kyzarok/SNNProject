@@ -35,5 +35,4 @@ class Physical(pyglet.sprite.Sprite):
         return (actualDistance <= collisionDistance)
 
     def handleCollisionWith(self, otherObject):
-        if otherObject.__class__ is not self.__class__:
-            self.collision = True
+        self.collision = True
