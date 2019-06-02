@@ -6,7 +6,7 @@ import math
 class Square(phy.Physical):
 
     def __init__(self, *args, **kwargs): #x_start, y_start, batch
-        super(Square, self).__init__(img=resources.obImage, *args, **kwargs)
+        super(Square, self).__init__(img=resources.squareImage, *args, **kwargs)
 
     def update(self, dt):
         super(Square, self).update(dt)
@@ -53,12 +53,7 @@ class Square(phy.Physical):
     
     def offsetVelocities(self, boid_x, boid_y):
         offsetVX, offsetVY = 0.0, 0.0
-        repulsionSpeed = 40.0
-        # #line function
-        # m = self.image.height/self.image.width
-        # cpos = self.y - m*self.x
-        # cneg = self.y + m*self.x
-
+        repulsionSpeed = 30.0
         diff_x, diff_y = 0.0, 0.0
 
         if boid_y > self.y + self.image.height/2*self.scale:

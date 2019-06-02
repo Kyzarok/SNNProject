@@ -13,5 +13,5 @@ pyglet.resource.reindex()
 boidImage = pyglet.resource.image("boid.png")
 centerImage(boidImage)
 
-obImage = pyglet.resource.image("obstacle.png")
-centerImage(obImage)
+squareImage = pyglet.resource.image("square.png")
+centerImage(squareImage)

@@ -1,26 +1,25 @@
-import numpy, pyglet, time
+import numpy, pyglet, time, random
 from game import physicalObject, physicalWall, boid, resources, load
-from random import randint
 
 #dimensions for window
 WIDTH = 1200
 HEIGHT = 900
 
-#start and end coords
+#start and end coords, WIDTH-
 X_START = 100
 Y_START = 800
 X_GOAL = 1100
 Y_GOAL = 100
 
+BOID_NUMBER = 6
 
 #coords and dimensions for rectangular obstacle
-numOfObs = 1
-OB_1_X = 450
-OB_1_Y = 600
-OB_2_X = 700
-OB_2_Y = 250
-
-
+OB_1_X = random.randint(200, 1000)
+OB_1_Y = random.randint(200, 700)
+OB_1_SCALE = 1.0
+OB_2_X = random.randint(200, 1000)
+OB_2_Y = random.randint(200, 700)
+OB_2_SCALE = 0.5
 #define window height and width
 gameWindow = pyglet.window.Window(width=WIDTH, height=HEIGHT)
 
@@ -31,11 +30,9 @@ drawBatch = pyglet.graphics.Batch()
 
 titleLabel = pyglet.text.Label(text='Single Boid Collision Avoidance', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
 goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch=drawBatch)
-mLabel = pyglet.text.Label(text='Maverick', x=X_START, y=Y_START, batch=drawBatch)
-gLabel = pyglet.text.Label(text='Goose', x=X_START + 50, y=Y_START - 50, batch=drawBatch)
+#mLabel = pyglet.text.Label(text='Maverick', x=X_START, y=Y_START, batch=drawBatch)
+#gLabel = pyglet.text.Label(text='Goose', x=X_START + 50, y=Y_START - 50, batch=drawBatch)
 
-mBoid=None
-gBoid=None
 obstacles=None
 boidList = []
 obList = []
@@ -43,45 +40,35 @@ eventStackSize = 0
 
 
 def init():
-    global mBoid, gBoid, obstacles, boidList, obList, eventStackSize
+    global obstacles, boidList, obList, eventStackSize
     
-    #init boid sprites
-    maverick = boid.Boid(x=X_START, y=Y_START, batch=drawBatch) #X_GOAL, Y_GOAL, 
-    goose = boid.Boid(x=X_START + 50, y=Y_START-50, batch=drawBatch)
-    #nirvash = boid.Boid(x=X_START + 20, y=Y_START - 20, batch=drawBatch)
-
-    #will need an initialiser that ensures they are far apart when they start
+    #init boid sprite
+    blue_beetle = boid.Boid(x=X_START-50, y=Y_START+20, batch=drawBatch)
 
     #init obstacles
+
     square_1 = physicalWall.Square(x=OB_1_X, y=OB_1_Y, batch=drawBatch)
-    square_1.setScale(1)
+    square_1.setScale(OB_1_SCALE)
     square_2 = physicalWall.Square(x=OB_2_X, y=OB_2_Y, batch=drawBatch)
-    square_2.setScale(0.5)
+    square_2.setScale(OB_2_SCALE)
     
     #listed this way as later there will be a list of boids and it will be easier if we knew the index of the obstacles
     #or maybe I should just make two game object lists........ that's not a bad idea, could test boids on their own
     #yeah I'll do that - musings@19:06 30/05/2019
     obList = [square_1, square_2]
-    boidList = [maverick, goose]#, nirvash]
+    boidList = [blue_beetle]
 
     #no event handlers necessary as no keyboard or mouse input
 
 @gameWindow.event
 def on_draw():
-    # global mBoid, gBoid
-    # m_x, m_y = mBoid.getPos()
-    # g_x, g_y = gBoid.getPos()
     gameWindow.clear()
-    # mLabel.x = m_x
-    # mLabel.y = m_y
-    # gLabel.x = g_x
-    # gLabel.y = g_y
     drawBatch.draw()
 
-def normalise(W_OP, W_OB_B):
-    total = W_OP + sum(W_OB_B)
-    W_OB_B = [w / total for w in W_OB_B]
-    retList = [W_OP/total, W_OB_B]
+def normalise(W_OP, W_OB):
+    total = W_OP + sum(W_OB)
+    W_OB_B = [w / total for w in W_OB]
+    retList = [W_OP/total, W_OB]
     return retList
 
 def navigateBoids():
@@ -95,45 +82,25 @@ def navigateBoids():
     
     for burd in boidList:
         #weights for further calibration
-        WEIGHT_OPTIMAL = 0.001
-        WEIGHT_OBSTACLE_BOID = [0.0] * (len(obList) + len(boidList) - 1) #this will use the inverse
-        offset_x = [0.0] * (len(obList) + len(boidList) - 1)
-        offset_y = [0.0] * (len(obList) + len(boidList) - 1)
+        WEIGHT_OPTIMAL = 0.0001
+        WEIGHT_OBSTACLE = [0.0] * (len(obList)) #this will use the inverse
+        offset_x = [0.0] * (len(obList))
+        offset_y = [0.0] * (len(obList))
         index = 0
 
         for ob in obList:
             b_x, b_y = burd.getPos()
             #get the distance from the boid to the obstacle
             boidToSquare = ob.shortestDistance(b_x, b_y)
-            if boidToSquare < (120*ob.getScale()):
-                offset_x[index], offset_y[index] = ob.offsetVelocities(b_x, b_y)
-                WEIGHT_OBSTACLE_BOID[index] = 1/((0.7*boidToSquare) ** 2)
-            else:
-                offset_x[index], offset_y[index] = 0.0, 0.0
-                WEIGHT_OBSTACLE_BOID[index] = 0.0
+            offset_x[index], offset_y[index] = ob.offsetVelocities(b_x, b_y)
+            WEIGHT_OBSTACLE[index] = 1/((0.26*boidToSquare) ** 2)
             index += 1
 
-        for otherBurds in boidList:
-            if burd != otherBurds:
-                #print('avoiding')
-                b_x, b_y = otherBurds.getPos()
-                boidToBoid = burd.shortestDistance(b_x, b_y)
-                #print('distance between boids: ' + str(boidToBoid))
-                if boidToBoid < 25:
-                    offset_x[index], offset_y[index] = ob.offsetVelocities(b_x, b_y)
-                    WEIGHT_OBSTACLE_BOID[index] = 1/((boidToBoid) ** 2)
-                else:
-                    offset_x[index], offset_y[index] = 0.0, 0.0
-                    WEIGHT_OBSTACLE_BOID[index] = 0.0
-                index += 1
-            #else:
-                #print('ignoring')
-
-        WEIGHT_OPTIMAL, WEIGHT_OBSTACLE_BOID = normalise(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE_BOID)
-        print('weights(OP, OB, B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE_BOID))
+        WEIGHT_OPTIMAL, WEIGHT_OBSTACLE= normalise(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE)
+        print('weights(OP, OB, B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE))
 
         burd.setToOptimalHeading()
-        burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE_BOID, offset_x, offset_y)
+        burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, offset_x, offset_y)
     
 def update(dt):
     global boidList, obList
@@ -164,5 +131,5 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 1/3)
+    pyglet.clock.schedule_interval(update, 1/4)
     pyglet.app.run()
