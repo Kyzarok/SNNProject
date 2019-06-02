@@ -26,7 +26,7 @@ boidStillFlying = True
 
 drawBatch = pyglet.graphics.Batch()
 
-titleLabel = pyglet.text.Label(text='Single Boid Collision Avoidance', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
+titleLabel = pyglet.text.Label(text='Multiple Boids Collision Avoidance', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
 goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch=drawBatch)
 #mLabel = pyglet.text.Label(text='Maverick', x=X_START, y=Y_START, batch=drawBatch)
 #gLabel = pyglet.text.Label(text='Goose', x=X_START + 50, y=Y_START - 50, batch=drawBatch)
@@ -42,6 +42,7 @@ def init():
     BOID_NUMBER = int(input('enter number of boids: '))
     print(str(BOID_NUMBER))
     
+    #init boids
     i = 0
     while i < BOID_NUMBER:
         b_x = random.randint(X_START - 50, X_START + 50)
@@ -57,11 +58,7 @@ def init():
             i-=1
         i+=1
 
-    #will need an initialiser that ensures they are far apart when they start
-
-
     #init obstacles
-
     square_1 = physicalWall.Square(x=OB_1_X, y=OB_1_Y, batch=drawBatch)
     square_1.setScale(OB_1_SCALE)
     square_2 = physicalWall.Square(x=OB_2_X, y=OB_2_Y, batch=drawBatch)
@@ -163,13 +160,6 @@ def update(dt):
     for obj in gameList:
         obj.update(dt)
 
-    #considering the case of one boid, navigating around the world
-    
-    #we need an 'event loop' to do everything in, and an exit condition
-
-    #TEST1: Make the boid move across the screen
-    #while(boidStillFlying):
-    #    navigateBoid()
 
 if __name__ == '__main__':
     init()
