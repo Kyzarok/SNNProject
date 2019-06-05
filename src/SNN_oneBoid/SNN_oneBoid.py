@@ -1,5 +1,5 @@
 import numpy, pyglet, time, random
-from game import physicalObject, physicalWall, boid, resources, load, util, SNN
+from game import physicalObject, physicalWall, boid, resources, load, util
 
 #dimensions for window
 WIDTH = 1200
@@ -29,18 +29,6 @@ goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch
 
 boidList = []
 obList = []
-
-
-#########################################################
-################ SNN STUFF GOES HERE ####################
-#########################################################
-
-oneBoid_NET = SNN.boid_net()    #maverick now has a brain, but will he use it?
-
-#########################################################
-#########################################################
-#########################################################
-
 
 
 def init():
@@ -100,7 +88,7 @@ def navigateBoids(dt):
         burd.setToOptimalHeading()
         burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, offset_x, offset_y)
 
-        oneBoid_NET.run(dt)
+        burd.run(dt)
     
 def update(dt):
     global boidList, obList
