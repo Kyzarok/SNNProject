@@ -1,5 +1,5 @@
 import numpy, pyglet, time, random
-from game import physicalObject, physicalWall, boid, resources, load, util
+from game import physicalObject, physicalWall, boid, resources, load, util, SNN
 
 #dimensions for window
 WIDTH = 1200
@@ -18,50 +18,39 @@ OB_1_SCALE = 1.0
 OB_2_X = random.randint(200, 1000)
 OB_2_Y = random.randint(200, 700)
 OB_2_SCALE = 0.5
+
 #define window height and width
 gameWindow = pyglet.window.Window(width=WIDTH, height=HEIGHT)
-
-#this can easily not be a global dude fix it
-boidStillFlying = True
 
 drawBatch = pyglet.graphics.Batch()
 
 titleLabel = pyglet.text.Label(text='Single Boid Collision Avoidance', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
 goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch=drawBatch)
-#mLabel = pyglet.text.Label(text='Maverick', x=X_START, y=Y_START, batch=drawBatch)
-#gLabel = pyglet.text.Label(text='Goose', x=X_START + 50, y=Y_START - 50, batch=drawBatch)
 
-obstacles=None
 boidList = []
 obList = []
-eventStackSize = 0
+
+
+#########################################################
+################ SNN STUFF GOES HERE ####################
+#########################################################
+
+oneBoid_NET = SNN.boid_net()    #maverick now has a brain, but will he use it?
+
+#########################################################
+#########################################################
+#########################################################
+
 
 
 def init():
-    global obstacles, boidList, obList, eventStackSize
-    # BOID_NUMBER = int(input('enter number of boids: '))
-    # print(str(BOID_NUMBER))
+    global obstacles, boidList, obList, oneBoid_NET
     
     #init boids
     b_x = random.randint(X_START - 50, X_START + 50)
     b_y = random.randint(Y_START - 50, Y_START + 50)
 
-    mehve = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
-
-    # i = 0
-    # while i < BOID_NUMBER:
-    #     b_x = random.randint(X_START - 50, X_START + 50)
-    #     b_y = random.randint(Y_START - 50, Y_START + 50)
-    #     new_boid = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
-    #     append = True
-    #     for burd in boidList:
-    #         if util.distance(new_boid.getPos(), burd.getPos()) < 30:
-    #             append = False
-    #     if append:
-    #         boidList.append(new_boid)
-    #     else:
-    #         i-=1
-    #     i+=1
+    maverick = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
 
     #init obstacles
     square_1 = physicalWall.Square(x=OB_1_X, y=OB_1_Y, batch=drawBatch)
@@ -69,33 +58,22 @@ def init():
     square_2 = physicalWall.Square(x=OB_2_X, y=OB_2_Y, batch=drawBatch)
     square_2.setScale(OB_2_SCALE)
     
-    #listed this way as later there will be a list of boids and it will be easier if we knew the index of the obstacles
-    #or maybe I should just make two game object lists........ that's not a bad idea, could test boids on their own
-    #yeah I'll do that - musings@19:06 30/05/2019
     obList = [square_1, square_2]
-    boidList = [mehve]
-
-    #no event handlers necessary as no keyboard or mouse input
+    boidList = [maverick]
 
 @gameWindow.event
 def on_draw():
     gameWindow.clear()
     drawBatch.draw()
 
-# def normalise(W_OP, W_OB):
-#     total = W_OP + sum(W_OB)
-#     W_OB = [w / total for w in W_OB]
-#     retList = [W_OP/total, W_OB]
-#     return retList
-
-def navigateBoids():
+def navigateBoids(dt):
     global boidList, obList
     #so this function's job is to correctly orientate the heading of the boid
-    #the core equation needs to account for other obstacles as well as opitmal heading
-    
-    #nearestBoidHeading = 0
+    #core equation is no longer relevant, the point is now to use input from the neural network
 
-    #the boids will only take the effort to avoid the boid nearest to it
+    #I can use a TimedArray to actually record some data and use it right, and runtime can be the update interval
+    #the challenge is going to be getting output that's relevant
+
     
     for burd in boidList:
         #weights for further calibration
@@ -117,32 +95,12 @@ def navigateBoids():
                 WEIGHT_OBSTACLE[index] = 0.0
             index += 1
 
-        # for otherBurds in boidList:
-        #     if burd != otherBurds:
-        #         #print('avoiding')
-        #         b_x, b_y = otherBurds.getPos()
-        #         boidToBoid = burd.shortestDistance(b_x, b_y)
-        #         #print('distance between boids: ' + str(boidToBoid))
-        #         if boidToBoid < 100*otherBurds.getScale():
-        #             offset_x[index], offset_y[index] = burd.offsetVelocities(b_x, b_y)
-        #             WEIGHT_OBSTACLE_BOID[index] = 1/((1.25*boidToBoid) ** 2)
-        #         #do not consider if distance too short
-        #         else:
-        #             offset_x[index], offset_y[index] = 0.0, 0.0
-        #             WEIGHT_OBSTACLE_BOID[index] = 0.0
-        #         index += 1
-        #         #print('value of index: ' + str(index))
-        #     else:
-        #         #do not take self into account
-        #         offset_x[index], offset_y[index] = 0.0, 0.0
-        #         WEIGHT_OBSTACLE_BOID[index] = 0.0
-        #         index+=1
-
-        # WEIGHT_OPTIMAL, WEIGHT_OBSTACLE_BOID = normalise(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE_BOID)
         print('weights(OP, OB, B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE))
 
         burd.setToOptimalHeading()
         burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, offset_x, offset_y)
+
+        oneBoid_NET.run(dt)
     
 def update(dt):
     global boidList, obList
@@ -160,7 +118,7 @@ def update(dt):
                 print('COLLISION')
                 exit()
 
-    navigateBoids()
+    navigateBoids(dt)
 
     for obj in gameList:
         obj.update(dt)
@@ -168,5 +126,5 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 1/4)
+    pyglet.clock.schedule_interval(update, 1/30)
     pyglet.app.run()

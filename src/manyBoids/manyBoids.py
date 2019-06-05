@@ -106,7 +106,7 @@ def navigateBoids():
             boidToSquare = ob.shortestDistance(b_x, b_y)
             if boidToSquare < (120*ob.getScale()):
                 offset_x[index], offset_y[index] = ob.offsetVelocities(b_x, b_y)
-                WEIGHT_OBSTACLE_BOID[index] = 1/((boidToSquare) ** 2)
+                WEIGHT_OBSTACLE_BOID[index] = 1/((0.85*boidToSquare) ** 2)
             else:
                 offset_x[index], offset_y[index] = 0.0, 0.0
                 WEIGHT_OBSTACLE_BOID[index] = 0.0
@@ -163,5 +163,5 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 1/4)
+    pyglet.clock.schedule_interval(update, 1/50)
     pyglet.app.run()
