@@ -139,3 +139,6 @@ class Boid(phy.Physical):
     
     def getScale(self):
         return self.scale
+    
+    def getHeading(self):
+        return self.heading

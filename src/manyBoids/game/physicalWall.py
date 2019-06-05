@@ -57,21 +57,21 @@ class Square(phy.Physical):
         diff_x, diff_y = 0.0, 0.0
 
         if boid_y > self.y + self.image.height/2*self.scale:
-            diff_y = boid_y - (self.y + self.image.height/2*self.scale)
+            diff_y = (self.y + self.image.height/2*self.scale) - boid_y
 
         elif boid_y < self.y - self.image.height/2*self.scale:
-            diff_y = boid_y - (self.y - self.image.height/2*self.scale)
+            diff_y = (self.y - self.image.height/2*self.scale) - boid_y
 
         if boid_x < self.x - self.image.width/2*self.scale:
-            diff_x = boid_x - (self.x - self.image.width/2*self.scale)
+            diff_x = (self.x - self.image.width/2*self.scale) - boid_x
 
         elif boid_x > self.x + self.image.width/2*self.scale:
-            diff_x = boid_x - (self.x + self.image.width/2*self.scale)
+            diff_x = (self.x + self.image.width/2*self.scale) - boid_x
 
         diffHeading = math.atan2(diff_y, diff_x)
 
-        offsetVX = repulsionSpeed * math.cos(diffHeading)
-        offsetVY = repulsionSpeed * math.sin(diffHeading)
+        offsetVX = -repulsionSpeed * math.cos(diffHeading)
+        offsetVY = -repulsionSpeed * math.sin(diffHeading)
 
         return offsetVX, offsetVY
 
