@@ -6,6 +6,7 @@ import math
 
 #first, we're gonna start with the basics, setting up a single Leaky Integrate and Fire neuron
 
+
 class boid_net():
 
     def __init__(self):
@@ -15,22 +16,14 @@ class boid_net():
         self.tau = 5*ms
         self.N = 5 #4 Neurons for input from 'sensors', 1 for output controlling direction
 
-        # Create a TimedArray and set the equations to use it
-        self.t_recorded = arange(int(200*ms/defaultclock.dt))*defaultclock.dt
-        self.I_recorded = TimedArray(self.A*math.sin(2*math.pi*self.f*self.t_recorded), dt=defaultclock.dt)
-        # TimedArray appears to take in as input an array of values then the time interval.
-        # 
-
-        self.eqs = '''
-        dv/dt = (I-v)/self.tau : 1
-        I = self.I_recorded(t) : 1
+        self.eqs =  '''
+        dv/dt = (1-v)/tau : 1
         '''
 
+        # TimedArray appears to take in as input an array of values then the time interval.
         self.G = NeuronGroup(self.N, self.eqs, threshold='v>1', reset='v=0', method='exact')
         self.M = StateMonitor(self.G, variables=True, record=True)
-        self.S = Synapses(self.G, self.G, 'w : 1', on_pre='v_post += w')
-        #current synapse weight is 1 for all synapses, this will be a problem
-
+        self.S = Synapses(self.G, self.G, 'w : 0.25', on_pre='v_post += w')
         self.S.connect(i=0, j=[1, 2, 3, 4])
     
     def run(self, dt):
@@ -43,3 +36,73 @@ class boid_net():
         plt.ylabel('v')
         plt.legend(loc='best')
         plt.show()
+
+    #take in as input the recorded I values, then update I_recorded so that 
+    def update(self, new_I):
+       self.G.run_regularly('self.I = new_I', dt=10*ms)
+
+    @network_operation(dt=10*ms)
+    def change_I(self, new_I):
+        self.G.I = new_I
+
+
+#not working, let's go even more basic, one neuron, if it fires set velocity to 0
+# class boid_net():
+
+#     def __init__(self):
+#         start_scope()
+
+#         self.N = 1
+#         self.tau = 10*ms
+
+#         eqs =  '''
+#         dv/dt = (1-v)/tau : 1
+#         '''
+
+#         self.G = NeuronGroup(N, eqs, threshold='v>1', reset='v=0', refractory=5*ms, method='exact')
+#         self.M = SpikeMonitor(self.G, variables=True, record=True)
+
+#     def run(self, dt):
+#         run(dt)
+
+
+
+
+
+#code for Hodgkin Huxley with randomized Amplitude for input I
+# start_scope()
+# group = NeuronGroup(1, eqs_HH,
+#                     threshold='v > -40*mV',
+#                     refractory='v > -40*mV',
+#                     method='exponential_euler')
+# group.v = El
+# statemon = StateMonitor(group, 'v', record=True)
+# spikemon = SpikeMonitor(group, variables='v')
+# # we replace the loop with a run_regularly
+# group.run_regularly('I = rand()*50*nA', dt=10*ms)
+# run(50*ms)
+# figure(figsize=(9, 4))
+# # we keep the loop just to draw the vertical lines
+# for l in range(5):
+#     axvline(l*10, ls='--', c='k')
+# axhline(El/mV, ls='-', c='lightgray', lw=3)
+# plot(statemon.t/ms, statemon.v[0]/mV, '-b')
+# plot(spikemon.t/ms, spikemon.v/mV, 'ob')
+# xlabel('Time (ms)')
+# ylabel('v (mV)')
+
+
+
+#arbitrary python code change
+# @network_operation(dt=10*ms)
+# def change_I():
+#     group.I = rand()*50*nA
+# run(50*ms)
+# figure(figsize=(9, 4))
+# for l in range(5):
+#     axvline(l*10, ls='--', c='k')
+# axhline(El/mV, ls='-', c='lightgray', lw=3)
+# plot(statemon.t/ms, statemon.v[0]/mV, '-b')
+# plot(spikemon.t/ms, spikemon.v/mV, 'ob')
+# xlabel('Time (ms)')
+# ylabel('v (mV)');

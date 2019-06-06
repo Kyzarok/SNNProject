@@ -1,5 +1,6 @@
 import numpy, pyglet, time, random
 from game import physicalObject, physicalWall, boid, resources, load, util
+from brian2 import *
 
 #dimensions for window
 WIDTH = 1200
@@ -12,11 +13,11 @@ X_GOAL = 1100
 Y_GOAL = 100
 
 #coords and dimensions for rectangular obstacle
-OB_1_X = random.randint(200, 1000)
-OB_1_Y = random.randint(200, 700)
+OB_1_X = 400 #random.randint(400, 1000)
+OB_1_Y = 600 #random.randint(200, 700)
 OB_1_SCALE = 1.0
-OB_2_X = random.randint(200, 1000)
-OB_2_Y = random.randint(200, 700)
+OB_2_X = 800 #random.randint(200, 1000)
+OB_2_Y = 300 #random.randint(200, 700)
 OB_2_SCALE = 0.5
 
 #define window height and width
@@ -30,9 +31,31 @@ goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch
 boidList = []
 obList = []
 
+#BEGIN THE BRIAN SIMULATION
+start_scope()
+A = 2.5
+f = 10*Hz
+tau = 5*ms
+N = 2
+
+eqs =  '''
+dv/dt = (1-v)/tau : 1
+'''
+
+# TimedArray appears to take in as input an array of values then the time interval.
+G = NeuronGroup(N, eqs, threshold='v>1', reset='v=0', method='exact')
+M = StateMonitor(G, variables=True, record=True)
+S = Synapses(G, G, 'w : 0.25', on_pre='v_post += w')
+S.connect(i=0, j=1)
+
+
+t_recorded = arange(int(200*ms/10*ms))*10*ms
+I_recorded = TimedArray(A*math.sin(2*math.pi*f*t_recorded), dt=10*ms) #starting dummy value, a simple sin wave
+
+G.run_regularly('I = I_recorded', dt=100*ms)
 
 def init():
-    global obstacles, boidList, obList, oneBoid_NET
+    global boidList, obList#, oneBoid_NET
     
     #init boids
     b_x = random.randint(X_START - 50, X_START + 50)
@@ -54,8 +77,14 @@ def on_draw():
     gameWindow.clear()
     drawBatch.draw()
 
+# #this function will update the I value, so now I need to define new_I as the TimedArray recording of the spikes of what just happened......argh
+# @network_operation(dt=10*ms)
+# def change_I():
+#     global I_recorded
+#     G.I = I_recorded #need to define new_I
+
 def navigateBoids(dt):
-    global boidList, obList
+    global boidList, obList, I_recorded
     #so this function's job is to correctly orientate the heading of the boid
     #core equation is no longer relevant, the point is now to use input from the neural network
 
@@ -70,6 +99,8 @@ def navigateBoids(dt):
         offset_x = [0.0] * len(obList)
         offset_y = [0.0] * len(obList)
         index = 0
+
+        driveCurrent = []
 
         for ob in obList:
             b_x, b_y = burd.getPos()
@@ -87,8 +118,8 @@ def navigateBoids(dt):
 
         burd.setToOptimalHeading()
         burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, offset_x, offset_y)
-
-        burd.run(dt)
+        I_recorded = TimedArray(driveCurrent, dt=10*ms)
+        #burd.run(dt)
     
 def update(dt):
     global boidList, obList
@@ -114,5 +145,6 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 1/30)
+    run(5*60*1000*ms)
+    pyglet.clock.schedule_interval(update, 1/10)
     pyglet.app.run()

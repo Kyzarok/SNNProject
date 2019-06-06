@@ -2,7 +2,7 @@ from game import physicalObject as phy
 import pyglet, math, random
 from game import resources, util, Leaky
 
-class Boid(phy.Physical, Leaky.boid_net):
+class Boid(phy.Physical):#, Leaky.boid_net):
 
     def __init__(self, *args, **kwargs): #x_start, y_start, x_target, y_target
         super(Boid, self).__init__(img=resources.boidImage, *args, **kwargs)
