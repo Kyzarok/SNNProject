@@ -12,12 +12,21 @@ X_GOAL = 1100
 Y_GOAL = 100
 
 #coords and dimensions for rectangular obstacle
-OB_1_X = random.randint(200, 1000)
-OB_1_Y = random.randint(200, 700)
+OB_1_X = 400 #random.randint(200, 1000)
+OB_1_Y = 600 #random.randint(200, 700)
 OB_1_SCALE = 1.0
-OB_2_X = random.randint(200, 1000)
-OB_2_Y = random.randint(200, 700)
+OB_2_X = 800 #random.randint(200, 1000)
+OB_2_Y = 250 #random.randint(200, 700)
 OB_2_SCALE = 0.5
+
+# #values for getting trapped
+# OB_1_X = 500 
+# OB_1_Y = 350 
+# OB_1_SCALE = 1.0
+# OB_2_X = 600 
+# OB_2_Y = 500
+# OB_2_SCALE = 0.5
+
 #define window height and width
 gameWindow = pyglet.window.Window(width=WIDTH, height=HEIGHT)
 
@@ -163,5 +172,5 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 1/50)
+    pyglet.clock.schedule_interval(update, 1/10)
     pyglet.app.run()
