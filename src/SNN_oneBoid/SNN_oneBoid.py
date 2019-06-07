@@ -56,25 +56,25 @@ obList = []
 
 ##################################################################################################
 ##################################################################################################
-# Command neurons
-tau = 1 * ms
-taus = 1.001 * ms
-wex = 7
-winh = -2
-eqs_neuron = '''
-dv/dt = (x - v)/tau : 1
-dx/dt = (y - x)/taus : 1 # alpha currents
-dy/dt = -y/taus : 1
-'''
-actuators = NeuronGroup(9, model=eqs_neuron, threshold='v>1', reset='v=0',
-                      method='exact')
-synapses_ex = Synapses(legs, actuators, on_pre='y+=wex')
-synapses_ex.connect(j='i')
-synapses_inh = Synapses(legs, actuators, on_pre='y+=winh', delay=deltaI)
-synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
-spikes = SpikeMonitor(actuators)
+# # Command neurons
+# tau = 1 * ms
+# taus = 1.001 * ms
+# wex = 7
+# winh = -2
+# eqs_neuron = '''
+# dv/dt = (x - v)/tau : 1
+# dx/dt = (y - x)/taus : 1 # alpha currents
+# dy/dt = -y/taus : 1
+# '''
+# actuators = NeuronGroup(9, model=eqs_neuron, threshold='v>1', reset='v=0',
+#                       method='exact')
+# synapses_ex = Synapses(legs, actuators, on_pre='y+=wex')
+# synapses_ex.connect(j='i')
+# synapses_inh = Synapses(legs, actuators, on_pre='y+=winh', delay=deltaI)
+# synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
+# spikes = SpikeMonitor(actuators)
 
-run(duration, report='text')
+# run(duration, report='text')
 
 # nspikes = spikes.count
 # phi_est = imag(log(sum(nspikes * exp(gamma * 1j))))
@@ -179,6 +179,16 @@ def on_draw():
 
 def navigateBoids(dt):
     #SNN takes in input of distances
+    global boidList, obList
+
+    for burd in boidList:
+        b_x, b_y = burd.getPos()
+        driveCurrent = []
+        for ob in obList:
+            boidToSquare = ob.shortestDistance(b_x, b_y)
+            angleToSquare = ob.angleFromBoidToObject(b_x, b_y)
+        
+        
 
 
 def update(dt):

@@ -11,7 +11,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         self.rotation = -math.degrees(self.heading) #maybe replace the maths for heading later in degrees
         self.target_x = 1100
         self.target_y = 100
-        self.resV = 30.0
+        self.resV = 10.0
         self.velocity_x = self.resV * math.cos(self.heading)
         self.velocity_y = self.resV * math.sin(self.heading)
 
@@ -64,7 +64,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
 
         self.velocity_x = self.resV * math.cos(bestHeading)
         self.velocity_y = self.resV * math.sin(bestHeading)
-        print('best heading is: ' + str(bestHeading))
+        #print('best heading is: ' + str(bestHeading))
 
     def getPos(self):
         return self.position
@@ -138,3 +138,18 @@ class Boid(phy.Physical):#, Leaky.boid_net):
     
     def getScale(self):
         return self.scale
+
+    def getOptimalHeading(self):
+            #optimal orientation: 
+        diff_x = self.x - self.target_x
+        diff_y = self.y - self.target_y 
+        angleToDest = math.atan2(diff_y,diff_x)
+        #print('angleToDest: ' + str(angleToDest))
+
+        #top
+        if 0 <= angleToDest:
+            bestHeading = -(math.pi - angleToDest)
+        #bottom
+        else:
+            bestHeading = math.pi + angleToDest
+        return bestHeading

@@ -6,7 +6,7 @@ class SmartBoid(boid.Boid):
 
     def __init__(self):
         super(SmartBoid, self).__init__()
-        deltaI = .7*ms  # inhibitory delay
+        self.deltaI = .7*ms  # inhibitory delay
 
         #spike rates
         self.rates = None
@@ -31,22 +31,22 @@ class SmartBoid(boid.Boid):
 
         spikes_sensors = SpikeMonitor(self.wall_sensors)
 
-        tau = 1 * ms
-        taus = 1.001 * ms
-        wex = 7
-        winh = -2
+        self.tau = 1 * ms
+        self.taus = 1.001 * ms
+        self.wex = 7
+        self.winh = -2
         eqs_neuron = '''
-        dv/dt = (x - v)/tau : 1
-        dx/dt = (y - x)/taus : 1 # alpha currents
-        dy/dt = -y/taus : 1
+        dv/dt = (x - v)/self.tau : 1
+        dx/dt = (y - x)/self.taus : 1 # alpha currents
+        dy/dt = -y/self.taus : 1
         '''
         self.actuators = NeuronGroup(9, model=eqs_neuron, threshold='v>1', reset='v=0',
                             method='exact')
-        self.synapses_ex = Synapses(self.wall_sensors, self.actuators, on_pre='y+=wex')
+        self.synapses_ex = Synapses(self.wall_sensors, self.actuators, on_pre='y+=self.wex')
         self.synapses_ex.connect(j='i')
-        self.synapses_inh = Synapses(self.wall_sensors, self.actuators, on_pre='y+=winh', delay=deltaI)
+        self.synapses_inh = Synapses(self.wall_sensors, self.actuators, on_pre='y+=self.winh', delay=self.deltaI)
         self.synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
-        spikes = SpikeMonitor(self.actuators)
+
 
     def run(self, wlist, dt):
         self.rates = TimedArray(wlist, dt=defaultclock.dt)
@@ -54,6 +54,16 @@ class SmartBoid(boid.Boid):
         dv/dt = (1 + self.rates(t - d) - v)/self.tau_sensor:1
         d : second
         """
+        self.synapses_ex = Synapses(self.wall_sensors, self.actuators, on_pre='y+=self.wex')
+        self.synapses_ex.connect(j='i')
+        self.synapses_inh = Synapses(self.wall_sensors, self.actuators, on_pre='y+=self.winh', delay=self.deltaI)
+        self.synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
+
+        spikes = SpikeMonitor(self.actuators)
+
         run(dt)
+
+        return spikes
+
 
 
