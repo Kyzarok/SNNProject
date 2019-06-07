@@ -54,6 +54,47 @@ obList = []
 
 # G.run_regularly('I = I_recorded', dt=100*ms)
 
+##################################################################################################
+##################################################################################################
+# Command neurons
+tau = 1 * ms
+taus = 1.001 * ms
+wex = 7
+winh = -2
+eqs_neuron = '''
+dv/dt = (x - v)/tau : 1
+dx/dt = (y - x)/taus : 1 # alpha currents
+dy/dt = -y/taus : 1
+'''
+actuators = NeuronGroup(9, model=eqs_neuron, threshold='v>1', reset='v=0',
+                      method='exact')
+synapses_ex = Synapses(legs, actuators, on_pre='y+=wex')
+synapses_ex.connect(j='i')
+synapses_inh = Synapses(legs, actuators, on_pre='y+=winh', delay=deltaI)
+synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
+spikes = SpikeMonitor(actuators)
+
+run(duration, report='text')
+
+# nspikes = spikes.count
+# phi_est = imag(log(sum(nspikes * exp(gamma * 1j))))
+# print("True angle (deg): %.2f" % (phi/degree))
+# print("Estimated angle (deg): %.2f" % (phi_est/degree))
+# rmax = amax(nspikes)/duration/Hz
+# polar(concatenate((gamma, [gamma[0] + 2 * pi])),
+#       concatenate((nspikes, [nspikes[0]])) / duration / Hz,
+#       c='k')
+# axvline(phi, ls='-', c='g')
+# axvline(phi_est, ls='-', c='b')
+# show()
+##################################################################################################
+##################################################################################################
+
+
+
+
+
+
 def init():
     global boidList, obList#, oneBoid_NET
     
@@ -83,58 +124,63 @@ def on_draw():
 #     global I_recorded
 #     G.I = I_recorded #need to define new_I
 
+# def navigateBoids(dt):
+#     global boidList, obList, I_recorded
+#     #so this function's job is to correctly orientate the heading of the boid
+#     #core equation is no longer relevant, the point is now to use input from the neural network
+
+#     #I can use a TimedArray to actually record some data and use it right, and runtime can be the update interval
+#     #the challenge is going to be getting output that's relevant
+
+    
+#     for burd in boidList:
+#         #weights for further calibration
+#         WEIGHT_OPTIMAL = 0.001
+#         WEIGHT_OBSTACLE = [0.0] * len(obList) #this will use the inverse
+#         offset_x = [0.0] * len(obList)
+#         offset_y = [0.0] * len(obList)
+#         index = 0
+
+#         driveCurrent = [] #okay, so this contains the currents that will go into a TimedArray that will update I_recorded
+#         #this will act as feedback into the neural network, and will generate, if any, spikes
+#         #that spike data will go into stateMonitor M, where I can use M.v to get the voltage of each and find when the spikes occured
+#         #THEN, I need to use said spike data to correct the boid heading
+#         #the much easier way would be to set up a way that both are always running, and a spike in one results in the change in heading immediately
+#         #current methodology is doomed to failure as the timing will mess things up, I can't react to moment in time that already passed
+#         #although maybe I could do it so that the boid just follows what will happen? No but then it's not real time reacting
+
+#         #wait Spikemonitor is a thing
+#         #spikemon detects spikes and records when they happen in .t, a time variable
+
+#         #Oh ffs I'm being dumb
+#         #what I can do is use synapses, the post synaptic neuron firing will be what I need to know and ....
+
+#         #nope that doesn't work either......ARGH
+
+#         for ob in obList:
+#             b_x, b_y = burd.getPos()
+#             #get the distance from the boid to the obstacle
+#             boidToSquare = ob.shortestDistance(b_x, b_y)
+#             if boidToSquare < (120*ob.getScale()):
+#                 offset_x[index], offset_y[index] = ob.offsetVelocities(b_x, b_y)
+#                 WEIGHT_OBSTACLE[index] = 1/((boidToSquare) ** 2)
+#             else:
+#                 offset_x[index], offset_y[index] = 0.0, 0.0
+#                 WEIGHT_OBSTACLE[index] = 0.0
+#             index += 1
+
+#         print('weights(OP, OB, B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE))
+
+#         burd.setToOptimalHeading()
+#         burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, offset_x, offset_y)
+#         # I_recorded = TimedArray(driveCurrent, dt=10*ms)
+#         #burd.run(dt)
+    
+
 def navigateBoids(dt):
-    global boidList, obList, I_recorded
-    #so this function's job is to correctly orientate the heading of the boid
-    #core equation is no longer relevant, the point is now to use input from the neural network
+    #SNN takes in input of distances
 
-    #I can use a TimedArray to actually record some data and use it right, and runtime can be the update interval
-    #the challenge is going to be getting output that's relevant
 
-    
-    for burd in boidList:
-        #weights for further calibration
-        WEIGHT_OPTIMAL = 0.001
-        WEIGHT_OBSTACLE = [0.0] * len(obList) #this will use the inverse
-        offset_x = [0.0] * len(obList)
-        offset_y = [0.0] * len(obList)
-        index = 0
-
-        driveCurrent = [] #okay, so this contains the currents that will go into a TimedArray that will update I_recorded
-        #this will act as feedback into the neural network, and will generate, if any, spikes
-        #that spike data will go into stateMonitor M, where I can use M.v to get the voltage of each and find when the spikes occured
-        #THEN, I need to use said spike data to correct the boid heading
-        #the much easier way would be to set up a way that both are always running, and a spike in one results in the change in heading immediately
-        #current methodology is doomed to failure as the timing will mess things up, I can't react to moment in time that already passed
-        #although maybe I could do it so that the boid just follows what will happen? No but then it's not real time reacting
-
-        #wait Spikemonitor is a thing
-        #spikemon detects spikes and records when they happen in .t, a time variable
-
-        #Oh ffs I'm being dumb
-        #what I can do is use synapses, the post synaptic neuron firing will be what I need to know and ....
-
-        #nope that doesn't work either......ARGH
-
-        for ob in obList:
-            b_x, b_y = burd.getPos()
-            #get the distance from the boid to the obstacle
-            boidToSquare = ob.shortestDistance(b_x, b_y)
-            if boidToSquare < (120*ob.getScale()):
-                offset_x[index], offset_y[index] = ob.offsetVelocities(b_x, b_y)
-                WEIGHT_OBSTACLE[index] = 1/((boidToSquare) ** 2)
-            else:
-                offset_x[index], offset_y[index] = 0.0, 0.0
-                WEIGHT_OBSTACLE[index] = 0.0
-            index += 1
-
-        print('weights(OP, OB, B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE))
-
-        burd.setToOptimalHeading()
-        burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, offset_x, offset_y)
-        # I_recorded = TimedArray(driveCurrent, dt=10*ms)
-        #burd.run(dt)
-    
 def update(dt):
     global boidList, obList
 
@@ -151,10 +197,10 @@ def update(dt):
                 print('COLLISION')
                 exit()
 
-    navigateBoids(dt/2)
+    navigateBoids((dt*0.9)/2)
 
     for obj in gameList:
-        obj.update(dt/2)
+        obj.update((dt*0.9)/2)
 
 
 if __name__ == '__main__':

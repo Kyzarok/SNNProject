@@ -51,29 +51,29 @@ class Square(phy.Physical):
 
         return shortestDistance
     
-    def offsetVelocities(self, boid_x, boid_y):
-        offsetVX, offsetVY = 0.0, 0.0
-        repulsionSpeed = 30.0
-        diff_x, diff_y = 0.0, 0.0
+    # def offsetVelocities(self, boid_x, boid_y):
+    #     offsetVX, offsetVY = 0.0, 0.0
+    #     repulsionSpeed = 30.0
+    #     diff_x, diff_y = 0.0, 0.0
 
-        if boid_y > self.y + self.image.height/2*self.scale:
-            diff_y = boid_y - (self.y + self.image.height/2*self.scale)
+    #     if boid_y > self.y + self.image.height/2*self.scale:
+    #         diff_y = boid_y - (self.y + self.image.height/2*self.scale)
 
-        elif boid_y < self.y - self.image.height/2*self.scale:
-            diff_y = boid_y - (self.y - self.image.height/2*self.scale)
+    #     elif boid_y < self.y - self.image.height/2*self.scale:
+    #         diff_y = boid_y - (self.y - self.image.height/2*self.scale)
 
-        if boid_x < self.x - self.image.width/2*self.scale:
-            diff_x = boid_x - (self.x - self.image.width/2*self.scale)
+    #     if boid_x < self.x - self.image.width/2*self.scale:
+    #         diff_x = boid_x - (self.x - self.image.width/2*self.scale)
 
-        elif boid_x > self.x + self.image.width/2*self.scale:
-            diff_x = boid_x - (self.x + self.image.width/2*self.scale)
+    #     elif boid_x > self.x + self.image.width/2*self.scale:
+    #         diff_x = boid_x - (self.x + self.image.width/2*self.scale)
 
-        diffHeading = math.atan2(diff_y, diff_x)
+    #     diffHeading = math.atan2(diff_y, diff_x)
 
-        offsetVX = repulsionSpeed * math.cos(diffHeading)
-        offsetVY = repulsionSpeed * math.sin(diffHeading)
+    #     offsetVX = repulsionSpeed * math.cos(diffHeading)
+    #     offsetVY = repulsionSpeed * math.sin(diffHeading)
 
-        return offsetVX, offsetVY
+    #     return offsetVX, offsetVY
 
 
     def handleCollisionWith(self, otherObject):
@@ -84,3 +84,30 @@ class Square(phy.Physical):
     
     def getScale(self):
         return self.scale
+
+
+    def angleFromBoidToObject(self, boid_x, boid_y):
+        #correct for heading, so +- pi
+        returnAngle = 0.0
+        diff_x, diff_y = 0.0, 0.0
+
+        if boid_y > self.y + self.image.height/2*self.scale:
+            diff_y = (self.y + self.image.height/2*self.scale) - boid_y
+
+        elif boid_y < self.y - self.image.height/2*self.scale:
+            diff_y = (self.y - self.image.height/2*self.scale) - boid_y
+
+        if boid_x < self.x - self.image.width/2*self.scale:
+            diff_x = (self.x - self.image.width/2*self.scale) - boid_x
+
+        elif boid_x > self.x + self.image.width/2*self.scale:
+            diff_x = (self.x + self.image.width/2*self.scale) - boid_x
+
+        diffHeading = math.atan2(diff_y, diff_x)
+
+        if diffHeading >= 0:
+            returnAngle = -math.pi + diffHeading
+        else:
+            returnAngle = math.pi + diffHeading
+
+        return returnAngle

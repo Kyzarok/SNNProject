@@ -1,6 +1,6 @@
 from game import physicalObject as phy
 import pyglet, math, random
-from game import resources, util, Leaky
+from game import resources, util
 
 class Boid(phy.Physical):#, Leaky.boid_net):
 
@@ -15,27 +15,27 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         self.velocity_x = self.resV * math.cos(self.heading)
         self.velocity_y = self.resV * math.sin(self.heading)
 
-    def correctVelocities(self, OP_weight, OB_B_weight, offset_x, offset_y):
-        v_x, v_y = 0.0, 0.0
+    # def correctVelocities(self, OP_weight, OB_B_weight, offset_x, offset_y):
+    #     v_x, v_y = 0.0, 0.0
 
-        offsetTotal_x = 0.0
-        offsetTotal_y = 0.0
-        for i in range(len(OB_B_weight)):
-            offsetTotal_x += OB_B_weight[i] * offset_x[i]
-            offsetTotal_y += OB_B_weight[i] * offset_y[i]
+    #     offsetTotal_x = 0.0
+    #     offsetTotal_y = 0.0
+    #     for i in range(len(OB_B_weight)):
+    #         offsetTotal_x += OB_B_weight[i] * offset_x[i]
+    #         offsetTotal_y += OB_B_weight[i] * offset_y[i]
 
-        v_x = (OP_weight * self.velocity_x) + offsetTotal_x
-        v_y = (OP_weight * self.velocity_y) + offsetTotal_y
+    #     v_x = (OP_weight * self.velocity_x) + offsetTotal_x
+    #     v_y = (OP_weight * self.velocity_y) + offsetTotal_y
 
-        newAngle = math.atan2(v_y, v_x)
-        print('new angle: ' +str(newAngle))
-        if 0 <= newAngle:
-            self.rotation = 360 - math.degrees(newAngle)
-        else:
-            self.rotation = -math.degrees(newAngle)
+    #     newAngle = math.atan2(v_y, v_x)
+    #     print('new angle: ' +str(newAngle))
+    #     if 0 <= newAngle:
+    #         self.rotation = 360 - math.degrees(newAngle)
+    #     else:
+    #         self.rotation = -math.degrees(newAngle)
         
-        self.velocity_x = self.resV * math.cos(newAngle)
-        self.velocity_y = self.resV * math.sin(newAngle)
+    #     self.velocity_x = self.resV * math.cos(newAngle)
+    #     self.velocity_y = self.resV * math.sin(newAngle)
 
     def update(self, dt):
         #mathematically correct update function
@@ -107,34 +107,34 @@ class Boid(phy.Physical):#, Leaky.boid_net):
 
         return shortestDistance
     
-    def offsetVelocities(self, otherBoid_x, otherBoid_y):
-        offsetVX, offsetVY = 0.0, 0.0
-        repulsionSpeed = self.resV
-        diff_x, diff_y = 0.0, 0.0
+    # def offsetVelocities(self, otherBoid_x, otherBoid_y):
+    #     offsetVX, offsetVY = 0.0, 0.0
+    #     repulsionSpeed = self.resV
+    #     diff_x, diff_y = 0.0, 0.0
 
-        if otherBoid_y > self.y + self.image.height/2*self.scale:
-            diff_y = otherBoid_y - (self.y + self.image.height/2*self.scale)
+    #     if otherBoid_y > self.y + self.image.height/2*self.scale:
+    #         diff_y = otherBoid_y - (self.y + self.image.height/2*self.scale)
 
-        elif otherBoid_y < self.y - self.image.height/2*self.scale:
-            diff_y = otherBoid_y - (self.y - self.image.height/2*self.scale)
+    #     elif otherBoid_y < self.y - self.image.height/2*self.scale:
+    #         diff_y = otherBoid_y - (self.y - self.image.height/2*self.scale)
 
-        if otherBoid_x < self.x - self.image.width/2*self.scale:
-            diff_x = otherBoid_x - (self.x - self.image.width/2*self.scale)
+    #     if otherBoid_x < self.x - self.image.width/2*self.scale:
+    #         diff_x = otherBoid_x - (self.x - self.image.width/2*self.scale)
 
-        elif otherBoid_x > self.x + self.image.width/2*self.scale:
-            diff_x = otherBoid_x - (self.x + self.image.width/2*self.scale)
+    #     elif otherBoid_x > self.x + self.image.width/2*self.scale:
+    #         diff_x = otherBoid_x - (self.x + self.image.width/2*self.scale)
 
-        #angle between the two boids
-        perpAngle = math.atan2(diff_y, diff_x)
-        #as the boid will be heading in a certain direction, we adjust for heading
-        diffHeading = perpAngle - self.heading
+    #     #angle between the two boids
+    #     perpAngle = math.atan2(diff_y, diff_x)
+    #     #as the boid will be heading in a certain direction, we adjust for heading
+    #     diffHeading = perpAngle - self.heading
 
-        print('diffHeading: ' + str(diffHeading))
-        if abs(diffHeading) < 0.8*math.pi: #considered range
-            offsetVX = -repulsionSpeed * math.cos(diffHeading)
-            offsetVY = -repulsionSpeed * math.sin(diffHeading)
+    #     print('diffHeading: ' + str(diffHeading))
+    #     if abs(diffHeading) < 0.8*math.pi: #considered range
+    #         offsetVX = -repulsionSpeed * math.cos(diffHeading)
+    #         offsetVY = -repulsionSpeed * math.sin(diffHeading)
 
-        return offsetVX, offsetVY
+    #     return offsetVX, offsetVY
     
     def getScale(self):
         return self.scale
