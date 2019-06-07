@@ -31,28 +31,28 @@ goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch
 boidList = []
 obList = []
 
-#BEGIN THE BRIAN SIMULATION
-start_scope()
-A = 2.5
-f = 10*Hz
-tau = 5*ms
-N = 2
+# #BEGIN THE BRIAN SIMULATION
+# start_scope()
+# A = 2.5
+# f = 10*Hz
+# tau = 5*ms
+# N = 2
 
-eqs =  '''
-dv/dt = (1-v)/tau : 1
-'''
+# eqs =  '''
+# dv/dt = (1-v)/tau : 1
+# '''
 
-# TimedArray appears to take in as input an array of values then the time interval.
-G = NeuronGroup(N, eqs, threshold='v>1', reset='v=0', method='exact')
-M = StateMonitor(G, variables=True, record=True)
-S = Synapses(G, G, 'w : 0.25', on_pre='v_post += w')
-S.connect(i=0, j=1)
+# # TimedArray appears to take in as input an array of values then the time interval.
+# G = NeuronGroup(N, eqs, threshold='v>1', reset='v=0', method='exact')
+# M = StateMonitor(G, variables=True, record=True)
+# S = Synapses(G, G, 'w : 0.25', on_pre='v_post += w')
+# S.connect(i=0, j=1)
 
 
-t_recorded = arange(int(200*ms/10*ms))*10*ms
-I_recorded = TimedArray(A*math.sin(2*math.pi*f*t_recorded), dt=10*ms) #starting dummy value, a simple sin wave
+# t_recorded = arange(int(200*ms/10*ms))*10*ms
+# I_recorded = TimedArray(A*math.sin(2*math.pi*f*t_recorded), dt=10*ms) #starting dummy value, a simple sin wave
 
-G.run_regularly('I = I_recorded', dt=100*ms)
+# G.run_regularly('I = I_recorded', dt=100*ms)
 
 def init():
     global boidList, obList#, oneBoid_NET
@@ -100,7 +100,21 @@ def navigateBoids(dt):
         offset_y = [0.0] * len(obList)
         index = 0
 
-        driveCurrent = []
+        driveCurrent = [] #okay, so this contains the currents that will go into a TimedArray that will update I_recorded
+        #this will act as feedback into the neural network, and will generate, if any, spikes
+        #that spike data will go into stateMonitor M, where I can use M.v to get the voltage of each and find when the spikes occured
+        #THEN, I need to use said spike data to correct the boid heading
+        #the much easier way would be to set up a way that both are always running, and a spike in one results in the change in heading immediately
+        #current methodology is doomed to failure as the timing will mess things up, I can't react to moment in time that already passed
+        #although maybe I could do it so that the boid just follows what will happen? No but then it's not real time reacting
+
+        #wait Spikemonitor is a thing
+        #spikemon detects spikes and records when they happen in .t, a time variable
+
+        #Oh ffs I'm being dumb
+        #what I can do is use synapses, the post synaptic neuron firing will be what I need to know and ....
+
+        #nope that doesn't work either......ARGH
 
         for ob in obList:
             b_x, b_y = burd.getPos()
@@ -118,7 +132,7 @@ def navigateBoids(dt):
 
         burd.setToOptimalHeading()
         burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, offset_x, offset_y)
-        I_recorded = TimedArray(driveCurrent, dt=10*ms)
+        # I_recorded = TimedArray(driveCurrent, dt=10*ms)
         #burd.run(dt)
     
 def update(dt):
@@ -137,14 +151,14 @@ def update(dt):
                 print('COLLISION')
                 exit()
 
-    navigateBoids(dt)
+    navigateBoids(dt/2)
 
     for obj in gameList:
-        obj.update(dt)
+        obj.update(dt/2)
 
 
 if __name__ == '__main__':
     init()
     run(5*60*1000*ms)
-    pyglet.clock.schedule_interval(update, 1/10)
+    pyglet.clock.schedule_interval(update, 1)
     pyglet.app.run()
