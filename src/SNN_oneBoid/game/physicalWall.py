@@ -50,31 +50,6 @@ class Square(phy.Physical):
                 shortestDistance = util.distance((boid_x, boid_y),(self.x + self.image.width/2*self.scale , self.y - self.image.height/2*self.scale ))
 
         return shortestDistance
-    
-    # def offsetVelocities(self, boid_x, boid_y):
-    #     offsetVX, offsetVY = 0.0, 0.0
-    #     repulsionSpeed = 30.0
-    #     diff_x, diff_y = 0.0, 0.0
-
-    #     if boid_y > self.y + self.image.height/2*self.scale:
-    #         diff_y = boid_y - (self.y + self.image.height/2*self.scale)
-
-    #     elif boid_y < self.y - self.image.height/2*self.scale:
-    #         diff_y = boid_y - (self.y - self.image.height/2*self.scale)
-
-    #     if boid_x < self.x - self.image.width/2*self.scale:
-    #         diff_x = boid_x - (self.x - self.image.width/2*self.scale)
-
-    #     elif boid_x > self.x + self.image.width/2*self.scale:
-    #         diff_x = boid_x - (self.x + self.image.width/2*self.scale)
-
-    #     diffHeading = math.atan2(diff_y, diff_x)
-
-    #     offsetVX = repulsionSpeed * math.cos(diffHeading)
-    #     offsetVY = repulsionSpeed * math.sin(diffHeading)
-
-    #     return offsetVX, offsetVY
-
 
     def handleCollisionWith(self, otherObject):
         super(Square, self).handleCollisionWith(otherObject)

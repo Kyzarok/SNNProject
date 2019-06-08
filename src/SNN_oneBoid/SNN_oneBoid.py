@@ -1,5 +1,5 @@
 import numpy, pyglet, time, random
-from game import physicalObject, physicalWall, boid, resources, load, util
+from game import physicalWall, boid_brain, resources, load, util, boid, physicalObject
 from brian2 import *
 
 #dimensions for window
@@ -31,78 +31,14 @@ goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch
 boidList = []
 obList = []
 
-# #BEGIN THE BRIAN SIMULATION
-# start_scope()
-# A = 2.5
-# f = 10*Hz
-# tau = 5*ms
-# N = 2
-
-# eqs =  '''
-# dv/dt = (1-v)/tau : 1
-# '''
-
-# # TimedArray appears to take in as input an array of values then the time interval.
-# G = NeuronGroup(N, eqs, threshold='v>1', reset='v=0', method='exact')
-# M = StateMonitor(G, variables=True, record=True)
-# S = Synapses(G, G, 'w : 0.25', on_pre='v_post += w')
-# S.connect(i=0, j=1)
-
-
-# t_recorded = arange(int(200*ms/10*ms))*10*ms
-# I_recorded = TimedArray(A*math.sin(2*math.pi*f*t_recorded), dt=10*ms) #starting dummy value, a simple sin wave
-
-# G.run_regularly('I = I_recorded', dt=100*ms)
-
-##################################################################################################
-##################################################################################################
-# # Command neurons
-# tau = 1 * ms
-# taus = 1.001 * ms
-# wex = 7
-# winh = -2
-# eqs_neuron = '''
-# dv/dt = (x - v)/tau : 1
-# dx/dt = (y - x)/taus : 1 # alpha currents
-# dy/dt = -y/taus : 1
-# '''
-# actuators = NeuronGroup(9, model=eqs_neuron, threshold='v>1', reset='v=0',
-#                       method='exact')
-# synapses_ex = Synapses(legs, actuators, on_pre='y+=wex')
-# synapses_ex.connect(j='i')
-# synapses_inh = Synapses(legs, actuators, on_pre='y+=winh', delay=deltaI)
-# synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
-# spikes = SpikeMonitor(actuators)
-
-# run(duration, report='text')
-
-# nspikes = spikes.count
-# phi_est = imag(log(sum(nspikes * exp(gamma * 1j))))
-# print("True angle (deg): %.2f" % (phi/degree))
-# print("Estimated angle (deg): %.2f" % (phi_est/degree))
-# rmax = amax(nspikes)/duration/Hz
-# polar(concatenate((gamma, [gamma[0] + 2 * pi])),
-#       concatenate((nspikes, [nspikes[0]])) / duration / Hz,
-#       c='k')
-# axvline(phi, ls='-', c='g')
-# axvline(phi_est, ls='-', c='b')
-# show()
-##################################################################################################
-##################################################################################################
-
-
-
-
-
-
 def init():
-    global boidList, obList#, oneBoid_NET
+    global boidList, obList
     
     #init boids
-    b_x = random.randint(X_START - 50, X_START + 50)
-    b_y = random.randint(Y_START - 50, Y_START + 50)
+    b_x = X_START #random.randint(X_START - 50, X_START + 50)
+    b_y = Y_START #random.randint(Y_START - 50, Y_START + 50)
 
-    maverick = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
+    maverick = boid_brain.SmartBoid(x=b_x, y=b_y, batch=drawBatch)
 
     #init obstacles
     square_1 = physicalWall.Square(x=OB_1_X, y=OB_1_Y, batch=drawBatch)
@@ -118,64 +54,8 @@ def on_draw():
     gameWindow.clear()
     drawBatch.draw()
 
-# #this function will update the I value, so now I need to define new_I as the TimedArray recording of the spikes of what just happened......argh
-# @network_operation(dt=10*ms)
-# def change_I():
-#     global I_recorded
-#     G.I = I_recorded #need to define new_I
-
-# def navigateBoids(dt):
-#     global boidList, obList, I_recorded
-#     #so this function's job is to correctly orientate the heading of the boid
-#     #core equation is no longer relevant, the point is now to use input from the neural network
-
-#     #I can use a TimedArray to actually record some data and use it right, and runtime can be the update interval
-#     #the challenge is going to be getting output that's relevant
-
-    
-#     for burd in boidList:
-#         #weights for further calibration
-#         WEIGHT_OPTIMAL = 0.001
-#         WEIGHT_OBSTACLE = [0.0] * len(obList) #this will use the inverse
-#         offset_x = [0.0] * len(obList)
-#         offset_y = [0.0] * len(obList)
-#         index = 0
-
-#         driveCurrent = [] #okay, so this contains the currents that will go into a TimedArray that will update I_recorded
-#         #this will act as feedback into the neural network, and will generate, if any, spikes
-#         #that spike data will go into stateMonitor M, where I can use M.v to get the voltage of each and find when the spikes occured
-#         #THEN, I need to use said spike data to correct the boid heading
-#         #the much easier way would be to set up a way that both are always running, and a spike in one results in the change in heading immediately
-#         #current methodology is doomed to failure as the timing will mess things up, I can't react to moment in time that already passed
-#         #although maybe I could do it so that the boid just follows what will happen? No but then it's not real time reacting
-
-#         #wait Spikemonitor is a thing
-#         #spikemon detects spikes and records when they happen in .t, a time variable
-
-#         #Oh ffs I'm being dumb
-#         #what I can do is use synapses, the post synaptic neuron firing will be what I need to know and ....
-
-#         #nope that doesn't work either......ARGH
-
-#         for ob in obList:
-#             b_x, b_y = burd.getPos()
-#             #get the distance from the boid to the obstacle
-#             boidToSquare = ob.shortestDistance(b_x, b_y)
-#             if boidToSquare < (120*ob.getScale()):
-#                 offset_x[index], offset_y[index] = ob.offsetVelocities(b_x, b_y)
-#                 WEIGHT_OBSTACLE[index] = 1/((boidToSquare) ** 2)
-#             else:
-#                 offset_x[index], offset_y[index] = 0.0, 0.0
-#                 WEIGHT_OBSTACLE[index] = 0.0
-#             index += 1
-
-#         print('weights(OP, OB, B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE))
-
-#         burd.setToOptimalHeading()
-#         burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE, offset_x, offset_y)
-#         # I_recorded = TimedArray(driveCurrent, dt=10*ms)
-#         #burd.run(dt)
-    
+#much of the architecture is now in place, the main missing detail is the update of driveCurrent[] or w
+#this is called the vector wave in other examples
 
 def navigateBoids(dt):
     #SNN takes in input of distances
@@ -183,12 +63,19 @@ def navigateBoids(dt):
 
     for burd in boidList:
         b_x, b_y = burd.getPos()
-        driveCurrent = []
+        #driveCurrent = []
         for ob in obList:
             boidToSquare = ob.shortestDistance(b_x, b_y)
             angleToSquare = ob.angleFromBoidToObject(b_x, b_y)
-        
-        
+            #check between which two sensors this is, those two get spikes
+            sensor_input = burd.runSensors(angleToSquare, dt)
+            weight = 1/(boidToSquare ** 2)
+            burd.runAcutators(sensor_input, weight, dt)
+
+            
+
+    #actuatorSpikes = burd.run(driveCurrent, dt)
+
 
 
 def update(dt):

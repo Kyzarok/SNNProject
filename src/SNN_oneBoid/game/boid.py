@@ -7,35 +7,13 @@ class Boid(phy.Physical):#, Leaky.boid_net):
     def __init__(self, *args, **kwargs): #x_start, y_start, x_target, y_target
         super(Boid, self).__init__(img=resources.boidImage, *args, **kwargs)
         self.scale = 0.5
-        self.heading = -math.pi/2 * random.randint(0, 10)/10#start value, is in radians and works of off same right aiming heading as trig funcs
+        self.heading = -math.pi/2 #* random.randint(0, 10)/10#start value, is in radians and works of off same right aiming heading as trig funcs
         self.rotation = -math.degrees(self.heading) #maybe replace the maths for heading later in degrees
         self.target_x = 1100
         self.target_y = 100
         self.resV = 10.0
         self.velocity_x = self.resV * math.cos(self.heading)
         self.velocity_y = self.resV * math.sin(self.heading)
-
-    # def correctVelocities(self, OP_weight, OB_B_weight, offset_x, offset_y):
-    #     v_x, v_y = 0.0, 0.0
-
-    #     offsetTotal_x = 0.0
-    #     offsetTotal_y = 0.0
-    #     for i in range(len(OB_B_weight)):
-    #         offsetTotal_x += OB_B_weight[i] * offset_x[i]
-    #         offsetTotal_y += OB_B_weight[i] * offset_y[i]
-
-    #     v_x = (OP_weight * self.velocity_x) + offsetTotal_x
-    #     v_y = (OP_weight * self.velocity_y) + offsetTotal_y
-
-    #     newAngle = math.atan2(v_y, v_x)
-    #     print('new angle: ' +str(newAngle))
-    #     if 0 <= newAngle:
-    #         self.rotation = 360 - math.degrees(newAngle)
-    #     else:
-    #         self.rotation = -math.degrees(newAngle)
-        
-    #     self.velocity_x = self.resV * math.cos(newAngle)
-    #     self.velocity_y = self.resV * math.sin(newAngle)
 
     def update(self, dt):
         #mathematically correct update function
@@ -47,24 +25,6 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         
         #here will be where we update the velocity
         #heading correction has already occured
-
-    def setToOptimalHeading(self):
-        #optimal orientation: 
-        diff_x = self.x - self.target_x
-        diff_y = self.y - self.target_y 
-        angleToDest = math.atan2(diff_y,diff_x)
-        #print('angleToDest: ' + str(angleToDest))
-
-        #top
-        if 0 <= angleToDest:
-            bestHeading = -(math.pi - angleToDest)
-        #bottom
-        else:
-            bestHeading = math.pi + angleToDest
-
-        self.velocity_x = self.resV * math.cos(bestHeading)
-        self.velocity_y = self.resV * math.sin(bestHeading)
-        #print('best heading is: ' + str(bestHeading))
 
     def getPos(self):
         return self.position
@@ -106,35 +66,6 @@ class Boid(phy.Physical):#, Leaky.boid_net):
                 shortestDistance = util.distance((boid_x, boid_y),(self.x + self.image.width/2*self.scale , self.y - self.image.height/2*self.scale ))
 
         return shortestDistance
-    
-    # def offsetVelocities(self, otherBoid_x, otherBoid_y):
-    #     offsetVX, offsetVY = 0.0, 0.0
-    #     repulsionSpeed = self.resV
-    #     diff_x, diff_y = 0.0, 0.0
-
-    #     if otherBoid_y > self.y + self.image.height/2*self.scale:
-    #         diff_y = otherBoid_y - (self.y + self.image.height/2*self.scale)
-
-    #     elif otherBoid_y < self.y - self.image.height/2*self.scale:
-    #         diff_y = otherBoid_y - (self.y - self.image.height/2*self.scale)
-
-    #     if otherBoid_x < self.x - self.image.width/2*self.scale:
-    #         diff_x = otherBoid_x - (self.x - self.image.width/2*self.scale)
-
-    #     elif otherBoid_x > self.x + self.image.width/2*self.scale:
-    #         diff_x = otherBoid_x - (self.x + self.image.width/2*self.scale)
-
-    #     #angle between the two boids
-    #     perpAngle = math.atan2(diff_y, diff_x)
-    #     #as the boid will be heading in a certain direction, we adjust for heading
-    #     diffHeading = perpAngle - self.heading
-
-    #     print('diffHeading: ' + str(diffHeading))
-    #     if abs(diffHeading) < 0.8*math.pi: #considered range
-    #         offsetVX = -repulsionSpeed * math.cos(diffHeading)
-    #         offsetVY = -repulsionSpeed * math.sin(diffHeading)
-
-    #     return offsetVX, offsetVY
     
     def getScale(self):
         return self.scale
