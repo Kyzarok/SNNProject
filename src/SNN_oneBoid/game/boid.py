@@ -7,7 +7,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
     def __init__(self, *args, **kwargs): #x_start, y_start, x_target, y_target
         super(Boid, self).__init__(img=resources.boidImage, *args, **kwargs)
         self.scale = 0.5
-        self.heading = -math.pi/2 #* random.randint(0, 10)/10#start value, is in radians and works of off same right aiming heading as trig funcs
+        self.heading = -math.pi/4 #* random.randint(0, 10)/10#start value, is in radians and works of off same right aiming heading as trig funcs
         self.rotation = -math.degrees(self.heading) #maybe replace the maths for heading later in degrees
         self.target_x = 1100
         self.target_y = 100
@@ -84,3 +84,31 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         else:
             bestHeading = math.pi + angleToDest
         return bestHeading
+
+    def response(self, indices, times, weight):
+        spike_frequency = [0.] * 11
+        f = 200*Hz
+        for i in range(len(spike_frequency)):
+            timings = []
+            index = 0
+            for j in indices:
+                if i == j: #if desired sensor
+                    timings.append(times[index])
+                index += 1
+            #we now have the various timings that a specific sensor spiked
+            delta_timings = []
+            for i in range(len(timings) - 1):
+                delta_timings[i] = timings[i+1] - timings[i]
+            average_delta_t = sum(delta_timings)/len(delta_timings)
+            spike_frequency[i] = 1/average_delta_t
+
+        #we now have a list of different spike frequencies for each sensor
+        #these are the response to the wall, so we want to react by going in the direction most frequent, but keeping in mind the various frequencies
+        #so first I need to normalise the weights
+        total = sum(spike_frequency)
+        spike_weight = [x/total for x in spike_frequency]
+        #the frequencies are now normalised
+        self.heading = -5*math.pi/6
+        #11 sensors, 150 to -150, math.pi/6
+        for i in range(len(spike_weight)):
+            self.heading += spike_weight[i] * (i * math.pi/6)
