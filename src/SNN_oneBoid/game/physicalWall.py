@@ -63,7 +63,6 @@ class Square(phy.Physical):
 
     def angleFromBoidToObject(self, boid_x, boid_y):
         #correct for heading, so +- pi
-        returnAngle = 0.0
         diff_x, diff_y = 0.0, 0.0
 
         if boid_y > self.y + self.image.height/2*self.scale:
@@ -78,11 +77,6 @@ class Square(phy.Physical):
         elif boid_x > self.x + self.image.width/2*self.scale:
             diff_x = (self.x + self.image.width/2*self.scale) - boid_x
 
-        diffHeading = math.atan2(diff_y, diff_x)
+        diffAngle = math.atan2(diff_y, diff_x)
 
-        if diffHeading >= 0:
-            returnAngle = -math.pi + diffHeading
-        else:
-            returnAngle = math.pi + diffHeading
-
-        return returnAngle
+        return diffAngle

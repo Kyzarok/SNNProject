@@ -7,8 +7,8 @@ WIDTH = 1200
 HEIGHT = 900
 
 #start and end coords, WIDTH-
-X_START = 50
-Y_START = 850
+X_START = 400#50
+Y_START = 100#850
 X_GOAL = 1100
 Y_GOAL = 100
 
@@ -35,19 +35,26 @@ boidList = []
 obList = []
 
 
-def run_SNN(I_values, tau, dt):
+def run_SNN(I_values, dt):
     start_scope()
 
     # Parameters
     duration = dt
     deltaI = .7*ms  # inhibitory delay
 
-    tau_sensors = defaultclock.dt
-    eqs_sensors = """
-    dv/dt = (1 + I_values(t, i) - v)/tau_sensors:1
-    """
+    tau_sensors = 1*ms
+    eqs_sensors = '''
+    dv/dt = (I - v)/tau_sensors : 1
+    I = I_values(t, i) : 1
+    '''
     wall_sensors = NeuronGroup(11, model=eqs_sensors, threshold='v > 1', reset='v = 0', refractory=1*ms, method='euler')
+    #wall_sensors.I = [5]
+    #greater the frequency, the more it spikes
     spikes_sensors = SpikeMonitor(wall_sensors)
+    
+    #we want it so that the more it spikes, the less it heads in that direction
+    #here it's the opposite, greater spikes mean go towards
+    #so we may be able to just reverse this
 
     # Command neurons
     tau = 1 * ms
@@ -59,8 +66,7 @@ def run_SNN(I_values, tau, dt):
     dx/dt = (y - x)/taus : 1 # alpha currents
     dy/dt = -y/taus : 1
     '''
-    actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>1', reset='v=0',
-                        method='exact')
+    actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>1', reset='v=0', method='exact')
     synapses_ex = Synapses(wall_sensors, actuators, on_pre='y+=wex')
     synapses_ex.connect(j='i')
     synapses_inh = Synapses(wall_sensors, actuators, on_pre='y+=winh', delay=deltaI)
@@ -69,8 +75,11 @@ def run_SNN(I_values, tau, dt):
 
     run(duration)
 
-    print(spikes.i)
-    print(spikes_sensors.i)
+    # print(spikes.i)
+    print("spikes_sensors.count: ")
+    print(spikes_sensors.count)
+    # print("actuator_spikes_count: ")
+    # print(spikes.count)
 
     return spikes
 
@@ -92,22 +101,26 @@ def on_draw():
     gameWindow.clear()
     drawBatch.draw()
 
-def navigateBoids():
+def navigateBoids(dt):
+    dt = dt * 1000 *ms
     global boidList, obList
-
-    dt = 500*ms
-    
     for burd in boidList:
         b_x, b_y = burd.getPos()
+        angleList = []
+        weightList = []
         for ob in obList:
             boidToSquare = ob.shortestDistance(b_x, b_y)
             angleToSquare = ob.angleFromBoidToObject(b_x, b_y)
             weight = 1/(boidToSquare**2)
-            #send sensor input, receive actuator output
-            I_values, tau = burd.drive_currents(dt, angleToSquare, weight)
-            actuator_spikes = run_SNN(I_values, tau, dt)
-            #run physics
-            burd.wall_response(actuator_spikes.i, actuator_spikes.t, boidToSquare)
+            angleList.append(angleToSquare)
+            weightList.append(weight)
+        op = burd.getOptimalHeading()
+        I_values = burd.drive_currents(dt, angleList, weightList, op)
+
+        #send sensor input, receive actuator output
+        actuator_spikes = run_SNN(I_values, dt)
+        #run physics
+        burd.response(actuator_spikes, boidToSquare)
 
     
 def update(dt):
@@ -124,8 +137,8 @@ def update(dt):
                 gameObj_2.handleCollisionWith(gameObj_1)
                 print('COLLISION')
                 exit()
-
-    navigateBoids()
+    dt = 1
+    navigateBoids(dt)
 
     for obj in gameList:
         obj.update(dt)
@@ -133,5 +146,5 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 10)#call once every 5 seconds
+    pyglet.clock.schedule_interval(update, 5)
     pyglet.app.run()

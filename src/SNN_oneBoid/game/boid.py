@@ -8,7 +8,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
     def __init__(self, *args, **kwargs): #x_start, y_start, x_target, y_target
         super(Boid, self).__init__(img=resources.boidImage, *args, **kwargs)
         self.scale = 0.5
-        self.heading = -math.pi/4 #* random.randint(0, 10)/10#start value, is in radians and works of off same right aiming heading as trig funcs
+        self.heading = 0#-math.pi/4 #* random.randint(0, 10)/10#start value, is in radians and works of off same right aiming heading as trig funcs
         self.rotation = -math.degrees(self.heading) #maybe replace the maths for heading later in degrees
         self.target_x = 1100
         self.target_y = 100
@@ -31,6 +31,22 @@ class Boid(phy.Physical):#, Leaky.boid_net):
 
     def getPos(self):
         return self.position
+
+
+    def getOptimalHeading(self):
+        #optimal orientation: 
+        diff_x = self.x - self.target_x
+        diff_y = self.y - self.target_y 
+        angleToDest = math.atan2(diff_y,diff_x)
+
+        #top
+        if 0 <= angleToDest:
+            bestHeading = -(math.pi - angleToDest)
+        #bottom
+        else:
+            bestHeading = math.pi + angleToDest
+        
+        return bestHeading
 
     def shortestDistance(self, boid_x, boid_y):
         shortestDistance = 0.0
@@ -73,74 +89,82 @@ class Boid(phy.Physical):#, Leaky.boid_net):
     def getScale(self):
         return self.scale
 
-    def getOptimalHeading(self):
-            #optimal orientation: 
-        diff_x = self.x - self.target_x
-        diff_y = self.y - self.target_y 
-        angleToDest = math.atan2(diff_y,diff_x)
-        #print('angleToDest: ' + str(angleToDest))
+    def response(self, actuator_spikes, weight):
+        print("actuator_spikes.count: ")
+        print(actuator_spikes.count)
+        print("actuator_spikes.i: ")
+        print(actuator_spikes.i)
+        print("actuator_spikes.t: ")
+        print(actuator_spikes.t)
 
-        #top
-        if 0 <= angleToDest:
-            bestHeading = -(math.pi - angleToDest)
-        #bottom
-        else:
-            bestHeading = math.pi + angleToDest
-        return bestHeading
 
-    def wall_response(self, indices, times, weight):
-        #print('total number of spikes is: ' + str(len(indices)))
-        spike_frequency = [0.] * 11
-        for i in range(11):
-            timings = []
-            index = 0
-            for j in indices:
-                if i == j: #if desired sensor
-                    timings.append(times[index])
-                index += 1
-            #we now have the various timings that a specific sensor spiked
-            delta_timings = [0.] * (len(timings) - 1)
-            for k in range(len(timings)-1):
-                delta_timings[k] = timings[k+1] - timings[k]
-            average_delta_t = sum(delta_timings)/len(delta_timings)
-            if average_delta_t > 0:
-                spike_frequency[i] = 1/average_delta_t
-        print(spike_frequency)
-        total = sum(spike_frequency)
-        print(total)
-        spike_weight = [x/total for x in spike_frequency]
-        print(spike_weight)
-        tmp = -5*math.pi/6
-        for i in range(len(spike_weight)):
-            print(tmp)
-            tmp += spike_weight[i] * (i * math.pi/6)
-        self.heading = tmp
 
-    def drive_currents(self, dt, angle, weight):
+        #BELOW IS BASED OFF OF FREQUENCIES
+        # spike_frequency = [0.] * 11
+        # for i in range(11):
+        #     timings = []
+        #     index = 0
+        #     for j in indices:
+        #         if i == j: #if desired sensors
+        #             timings.append(times[index])
+        #         index += 1
+        #     #we now have the various timings that a specific sensor spiked
+        #     delta_timings = [0.] * (len(timings) - 1)
+        #     for k in range(len(timings)-1):
+        #         delta_timings[k] = timings[k+1] - timings[k]
+        #     average_delta_t = sum(delta_timings)/len(delta_timings)
+        #     if average_delta_t > 0:
+        #         spike_frequency[i] = 1/average_delta_t
+        # # print("spike_frequency: ")
+        # # print(spike_frequency)
+        # total = sum(spike_frequency)
+        # # print("total: ")
+        # # print(total)
+        # spike_weight = [x/total for x in spike_frequency]
+        # print("spike_weight: ")
+        # print(spike_weight)
+        # tmp = -5*math.pi/6 + self.heading
+        # for i in range(len(spike_weight)):
+        #     tmp += spike_weight[i] * (i * math.pi/6)
+        # if tmp < -math.pi:
+        #     self.heading = tmp + 2*math.pi
+        # elif tmp > math.pi:
+        #     self.heading = -2*math.pi + tmp
+        # else:
+        #     self.heading = tmp
+        # print(self.heading)
+
+
+
+    #returns 2D TimedArray, called I_values
+    #generates lower frequencies for directions it needs to avoid, and higher for those desired
+    def drive_currents(self, dt, angle, weight, optimal):
         time = arange(int(dt / defaultclock.dt) + 1) * defaultclock.dt
-        #30 degrees is math.pi/6
-        spike_1 = 0
-        spike_2 = 0
-        for i in range(10):
-            current_orientation = -5*math.pi/6 + i*math.pi/6
-            if current_orientation <= angle < current_orientation + math.pi/6:
-                spike_1 = i
-                spike_2 = i+1
-        #we know where its inbetween, now we need to get the weights, for the frequencies
-        #the closer it is to the sensor, the greater the frequency
 
-        diff = (-5*math.pi/6 + spike_2*math.pi/6) - angle #this value will always be positive as ( -5*math.pi/6 + spike_2*math.pi/6) will always be greater than angle
-        spike_2_weight = diff/(math.pi/6)
-        spike_1_weight = 1 - spike_2_weight
-        A = 2
-        f = weight*100*Hz
-        list_1 = [A*math.cos(2 * math.pi * (spike_1_weight * f) * t) for t in time]
-        list_2 = [A*math.cos(2 * math.pi * (spike_2_weight * f) * t) for t in time]
+        frequency = [50.0]*11
+        distance_calibration = 150
+
+        for a in range(len(angle)):
+            for i in range(10):
+                current_orientation = -5*math.pi/6 + i*math.pi/6 + self.heading
+                if current_orientation <= angle[a] < current_orientation + math.pi/6:
+                    diff = (-5*math.pi/6 + (i+1)*math.pi/6 + self.heading) - a
+                    frequency[i] = ( 0.1 * frequency[i] * ( diff/(math.pi/6)) ) * (weight[a] / 150)
+                    frequency[i+1] = ( 0.1 * frequency[i+1] * ( 1 - diff/math.pi/6) ) * (weight[a] / 150)
+                    frequency[i] = 1.0
+                    frequency[i+1] = 1.0
+                
+                if current_orientation <= optimal < current_orientation + math.pi/6:
+                    diff = (-5*math.pi/6 + (i+1)*math.pi/6 + self.heading) - a
+                    frequency[i] *= frequency[i] * (1+(diff/(math.pi/6))) * 10
+                    frequency[i+1] *= frequency[i+1] * (1+(1-diff/(math.pi/6))) * 10
+
+        A = 5
         I_values = []
-        for j in range(len(time)):
+        for t in time:
             new = [0.0] * 11
-            new[spike_1] = list_1[j]
-            new[spike_2] = list_2[j]
+            for k in range(len(frequency)):
+                new[k] = A*math.cos(2 * math.pi * (frequency[k]) * t)
             I_values.append(new)
-        I_values = TimedArray(I_values, dt=defaultclock.dt)
-        return I_values, time
+        ret_values = TimedArray(I_values, dt=defaultclock.dt)
+        return ret_values
