@@ -168,8 +168,8 @@ class Boid(phy.Physical):#, Leaky.boid_net):
 
                     BACKWARDS = False
                     
-                    A_weight[i] = (weight[a]/weight_bound)
-                    A_weight[i+1] = (weight[a]/weight_bound)
+                    A_weight[i] += (weight[a]/weight_bound)
+                    A_weight[i+1] += (weight[a]/weight_bound)
 
                     frequency[i] *= 10 * (1+abs(diff/(math.pi/6)))
                     frequency[i+1] *= 10 * (1+(1 - abs(diff/(math.pi/6))))

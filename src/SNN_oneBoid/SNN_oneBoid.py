@@ -61,7 +61,7 @@ def run_SNN(I_avoid, I_attract, dt):
     # Command neurons
     tau = 1 * ms
     taus = 1.001 * ms
-    wex = 8
+    wex = 5
     winh = -2
     eqs_actuator = '''
     dv/dt = (x - v)/tau : 1
@@ -74,7 +74,7 @@ def run_SNN(I_avoid, I_attract, dt):
     synapses_inh = Synapses(negative_sensors, actuators, on_pre='y+=wex', delay=deltaI)
     synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
 
-    WEXCITE = 5
+    WEXCITE = 7
 
     synapses_EXCITE = Synapses(positive_sensors, actuators, on_pre='y+=WEXCITE')
     synapses_EXCITE.connect(j='i')
