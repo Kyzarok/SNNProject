@@ -35,7 +35,7 @@ boidList = []
 obList = []
 
 
-def run_SNN(I_values, dt):
+def run_SNN(I_avoid, I_attract, dt):
     start_scope()
 
     # Parameters
@@ -43,18 +43,20 @@ def run_SNN(I_values, dt):
     deltaI = .7*ms  # inhibitory delay
 
     tau_sensors = 0.1*ms
-    eqs_sensors = '''
+    eqs_avoid = '''
     dv/dt = (I - v)/tau_sensors : 1
-    I = I_values(t, i) : 1
+    I = I_avoid(t, i) : 1
     '''
-    wall_sensors = NeuronGroup(11, model=eqs_sensors, threshold='v > 1.0e-7', reset='v = 0', refractory=1*ms, method='euler')
-    #wall_sensors.I = [5]
-    #greater the frequency, the more it spikes
-    spikes_sensors = SpikeMonitor(wall_sensors)
+    negative_sensors = NeuronGroup(11, model=eqs_avoid, threshold='v > 1.0e-7', reset='v = 0', refractory=1*ms, method='euler')
+    neg_spikes_sensors = SpikeMonitor(negative_sensors)
     
-    #we want it so that the more it spikes, the less it heads in that direction
-    #here it's the opposite, greater spikes mean go towards
-    #so we may be able to just reverse this
+
+    eqs_attract= '''
+    dv/dt = (I - v)/tau_sensors : 1
+    I = I_attract(t, i) : 1
+    '''
+    positive_sensors = NeuronGroup(11, model=eqs_attract, threshold='v > 0.9', reset='v = 0', refractory=1*ms, method='euler')
+    pos_spikes_sensors = SpikeMonitor(positive_sensors)
 
     # Command neurons
     tau = 1 * ms
@@ -67,17 +69,26 @@ def run_SNN(I_values, dt):
     dy/dt = -y/taus : 1
     '''
     actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>1', reset='v=0', method='exact')
-    synapses_ex = Synapses(wall_sensors, actuators, on_pre='y+=winh')
+    synapses_ex = Synapses(negative_sensors, actuators, on_pre='y+=winh')
     synapses_ex.connect(j='i')
-    synapses_inh = Synapses(wall_sensors, actuators, on_pre='y+=wex', delay=deltaI)
+    synapses_inh = Synapses(negative_sensors, actuators, on_pre='y+=wex', delay=deltaI)
     synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
+
+    WEXCITE = 6
+
+    synapses_EXCITE = Synapses(positive_sensors, actuators, on_pre='y+=WEXCITE')
+    synapses_EXCITE.connect(j='i')
+
+
     spikes = SpikeMonitor(actuators)
 
     run(duration)
 
     # print(spikes.i)
-    print("spikes_sensors.count: ")
-    print(spikes_sensors.count)
+    print("negative_sensors.count: ")
+    print(neg_spikes_sensors.count)
+    print("positive_sensors.count: ")
+    print(pos_spikes_sensors.count)
     # print("actuator_spikes_count: ")
     # print(spikes.count)
 
@@ -114,12 +125,13 @@ def navigateBoids(dt):
             weight = 1/((boidToSquare)**2)
             angleList.append(angleToSquare)
             weightList.append(weight)
-        # op = burd.getOptimalHeading()
+        op = burd.getOptimalHeading()
         # I_values = burd.drive_currents(dt, angleList, weightList, op)
 
-        I_values = burd.wall_sensor_input(dt, angleList, weightList)
+        I_avoid = burd.wall_sensor_input(dt, angleList, weightList)
+        I_attract = burd.optimal_sensor_input(dt, op)
         #send sensor input, receive actuator output
-        actuator_spikes = run_SNN(I_values, dt)
+        actuator_spikes = run_SNN(I_avoid, I_attract, dt)
         #run physics
         burd.response(actuator_spikes, boidToSquare)
 

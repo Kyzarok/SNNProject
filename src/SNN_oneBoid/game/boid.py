@@ -99,16 +99,14 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         normalised = [x/total for x in actuator_spikes.count]
 
         for i in range(len(normalised)):
-            new_heading += normalised[i] * ((-5*math.pi/6) + (i*math.pi/6) + self.heading)
-        
-        # new_heading += self.heading
+            new_heading += normalised[i] * ((-5*math.pi/6) + (i*math.pi/6))
+
+        self.heading += new_heading
 
         if new_heading > math.pi:
             new_heading += -2*math.pi
         elif new_heading < -math.pi:
             new_heading += 2*math.pi
-
-        self.heading = new_heading
         print(self.heading)
 
 
@@ -147,67 +145,6 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         #     self.heading = tmp
         # print(self.heading)
 
-
-
-    #returns 2D TimedArray, called I_values
-    #generates lower frequencies for directions it needs to avoid, and higher for those desired
-    def drive_currents(self, dt, angle, weight, optimal):
-        time = arange(int(dt / (0.1*ms)) + 1) * (0.1*ms)
-
-        frequency= [10.0]*11
-        A_values = [0] * 11
-        distance_calibration = 150
-        BACKWARDS = True
-        #Calibrate for obstacles
-        for a in range(len(angle)): #go through the list of obstacles
-            for i in range(10): #go through each sensor
-                current_sensor_orientation = -5*math.pi/6 + i*math.pi/6 + self.heading
-                diff = (-5*math.pi/6 + (i+1)*math.pi/6 + self.heading) - angle[a]
-
-                if current_sensor_orientation > math.pi:
-                    current_sensor_orientation += -2*math.pi
-                elif current_sensor_orientation < -2*math.pi:
-                    current_sensor_orientation += 2*math.pi
-
-                #calibrate for desired angle 
-                if current_sensor_orientation <= optimal < current_sensor_orientation + math.pi/6:
-                    A_values[i] = 10 * (abs(diff/(math.pi/6)))
-                    A_values[i+1] = 10 * ((1-abs(diff/(math.pi/6))))
-                    # print("OPTIMAL A_VALUES")
-                    # print(A_values)
-                    frequency[i] *= (diff/(math.pi/6))*10
-                    frequency[i+1] *= (1-diff/(math.pi/6))*10
-
-                if current_sensor_orientation <= angle[a] < current_sensor_orientation + math.pi/6:
-                    BACKWARDS=False
-                    A_values[i] *= abs((diff/(math.pi/6))) * weight[a]
-                    A_values[i+1] *= (1 - abs(diff/(math.pi/6))) * weight[a]
-                    # print("AVOIDANCE A_VALUES")
-                    # print(A_values)
-                    frequency[i] *= 0.1 * (diff/(math.pi/6))
-                    frequency[i+1] *= 0.1 * (1 - diff/(math.pi/6))
-                    # frequency[i] = 1.0
-                    # frequency[i+1] = 1.0
-
-        if BACKWARDS:
-            print('NEEDS TO FLIP') 
-
-        # total = sum(frequency)
-        # normalised = [x/total for x in frequency]
-
-        A = 10
-        #f = 500
-        I_values = []
-        print("A_values: ")
-        print(A_values)
-        for t in time:
-            new = [0.0] * 11
-            for k in range(len(frequency)):
-                new[k] = (A*A_values[k])*math.cos(2 * math.pi * (frequency[k]) * t)
-            I_values.append(new)
-        ret_values = TimedArray(I_values, 0.1*ms)
-        return ret_values
-
     def wall_sensor_input(self, dt, angle, weight):
         time = arange(int(dt / (0.1*ms)) + 1) * (0.1*ms)
 
@@ -239,6 +176,44 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         print(A_weight)
 
         A = 3
+        I_values = []
+        for t in time:
+            new = [0.0] * 11
+            for k in range(len(frequency)):
+                new[k] = (A*A_weight[k])*math.cos(2 * math.pi * (frequency[k]) * t)
+            I_values.append(new)
+        ret_values = TimedArray(I_values, 0.1*ms)
+        return ret_values
+
+    def optimal_sensor_input(self, dt, optimal):
+        time = arange(int(dt / (0.1*ms)) + 1) * (0.1*ms)
+
+        # BACKWARDS = True
+
+        A_weight = [1.0] * 11
+        frequency = [0.0] * 11
+
+        for i in range(10): #go through each sensor
+            current_sensor_orientation = -5*math.pi/6 + i*math.pi/6 + self.heading
+            diff = (-5*math.pi/6 + (i+1)*math.pi/6 + self.heading) - optimal
+
+            if current_sensor_orientation > math.pi:
+                current_sensor_orientation += -2*math.pi
+            elif current_sensor_orientation < -2*math.pi:
+                current_sensor_orientation += 2*math.pi
+
+            if current_sensor_orientation <= optimal < current_sensor_orientation + math.pi/6:
+                A_weight[i] = 10 * (abs(diff/(math.pi/6)))
+                A_weight[i+1] = 10 * ((1-abs(diff/(math.pi/6))))
+                frequency[i] *= (diff/(math.pi/6))*10
+                frequency[i+1] *= (1-diff/(math.pi/6))*10
+
+        # if BACKWARDS:
+        #     print('NEEDS TO FLIP')
+
+        print(A_weight)
+
+        A = 1
         I_values = []
         for t in time:
             new = [0.0] * 11
