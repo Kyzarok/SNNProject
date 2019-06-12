@@ -99,9 +99,9 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         normalised = [x/total for x in actuator_spikes.count]
 
         for i in range(len(normalised)):
-            new_heading += normalised[i] * ((-5*math.pi/6) + (i*math.pi/6))
+            new_heading += normalised[i] * ((-5*math.pi/6) + (i*math.pi/6) + self.heading)
         
-        new_heading += self.heading
+        # new_heading += self.heading
 
         if new_heading > math.pi:
             new_heading += -2*math.pi
@@ -109,6 +109,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
             new_heading += 2*math.pi
 
         self.heading = new_heading
+        print(self.heading)
 
 
         #BELOW IS BASED OFF OF FREQUENCIES
@@ -151,40 +152,54 @@ class Boid(phy.Physical):#, Leaky.boid_net):
     #returns 2D TimedArray, called I_values
     #generates lower frequencies for directions it needs to avoid, and higher for those desired
     def drive_currents(self, dt, angle, weight, optimal):
-        time = arange(int(dt / defaultclock.dt) + 1) * defaultclock.dt
+        time = arange(int(dt / (0.1*ms)) + 1) * (0.1*ms)
 
-        frequency_weight = [50.0]*11
+        frequency= [10.0]*11
+        A_values = [0.1] * 11
         distance_calibration = 150
 
         #Calibrate for obstacles
-        for a in range(len(angle)):
-            for i in range(10):
-                current_orientation = -5*math.pi/6 + i*math.pi/6 + self.heading
-                if current_orientation <= angle[a] < current_orientation + math.pi/6:
-                    diff = (-5*math.pi/6 + (i+1)*math.pi/6 + self.heading) - a
-                    # frequency[i] = ( 0.1 * frequency[i] * ( diff/(math.pi/6)) ) * (weight[a] / distance_calibration)
-                    # frequency[i+1] = ( 0.1 * frequency[i+1] * ( 1 - diff/math.pi/6) ) * (weight[a] / distance_calibration)
-                    frequency_weight[i] = 1.0
-                    frequency_weight[i+1] = 1.0
+        for a in range(len(angle)): #go through the list of obstacles
+            for i in range(10): #go through each sensor
+                current_sensor_orientation = -5*math.pi/6 + i*math.pi/6 + self.heading
+                diff = (-5*math.pi/6 + (i+1)*math.pi/6 + self.heading) - angle[a]
 
-        #calibrate for desired angle
-        for j in range(10):
-            current_orientation = -5*math.pi/6 + j*math.pi/6 + self.heading  
-            if current_orientation <= optimal < current_orientation + math.pi/6:
-                diff = (-5*math.pi/6 + (j+1)*math.pi/6 + self.heading) - a
-                frequency_weight[j] *= ((1+(diff/(math.pi/6))) * 100)
-                frequency_weight[j+1] *= ((1+(1-diff/(math.pi/6))) * 100)
+                if current_sensor_orientation > math.pi:
+                    current_sensor_orientation += -2*math.pi
+                elif current_sensor_orientation < -2*math.pi:
+                    current_sensor_orientation += 2*math.pi
 
-        total = sum(frequency_weight)
-        normalised = [x/total for x in frequency_weight]
+                #calibrate for desired angle 
+                if current_sensor_orientation <= optimal < current_sensor_orientation + math.pi/6:
+                    A_values[i] = 10 * (abs(diff/(math.pi/6)))
+                    A_values[i+1] = 10 * ((1-abs(diff/(math.pi/6))))
+                    print("OPTIMAL A_VALUES")
+                    print(A_values)
+                    frequency[i] *= (diff/(math.pi/6))*10
+                    frequency[i+1] *= (1-diff/(math.pi/6))*10
 
-        A = 5
-        f = 500
+                if current_sensor_orientation <= angle[a] < current_sensor_orientation + math.pi/6:
+                    A_values[i] *= 0.1 * abs((diff/(math.pi/6))) * weight[a]
+                    A_values[i+1] *= 0.1 * (1 - abs(diff/(math.pi/6))) * weight[a]
+                    print("AVOIDANCE A_VALUES")
+                    print(A_values)
+                    frequency[i] *= 0.1 * (diff/(math.pi/6))
+                    frequency[i+1] *= 0.1 * (1 - diff/(math.pi/6))
+                    # frequency[i] = 1.0
+                    # frequency[i+1] = 1.0
+
+        # total = sum(frequency)
+        # normalised = [x/total for x in frequency]
+
+        A = 10
+        #f = 500
         I_values = []
+        print("A_values: ")
+        print(A_values)
         for t in time:
             new = [0.0] * 11
-            for k in range(len(normalised)):
-                new[k] = A*math.cos(2 * math.pi * (normalised[k] * f) * t)
+            for k in range(len(frequency)):
+                new[k] = (A*A_values[k])*math.cos(2 * math.pi * (frequency[k]) * t)
             I_values.append(new)
-        ret_values = TimedArray(I_values, dt=defaultclock.dt)
+        ret_values = TimedArray(I_values, 0.1*ms)
         return ret_values

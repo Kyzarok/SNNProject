@@ -7,8 +7,8 @@ WIDTH = 1200
 HEIGHT = 900
 
 #start and end coords, WIDTH-
-X_START = 400#50
-Y_START = 100#850
+X_START = 50 #400
+Y_START = 850 #100
 X_GOAL = 1100
 Y_GOAL = 100
 
@@ -42,12 +42,12 @@ def run_SNN(I_values, dt):
     duration = dt
     deltaI = .7*ms  # inhibitory delay
 
-    tau_sensors = 1*ms
+    tau_sensors = 0.1*ms
     eqs_sensors = '''
     dv/dt = (I - v)/tau_sensors : 1
     I = I_values(t, i) : 1
     '''
-    wall_sensors = NeuronGroup(11, model=eqs_sensors, threshold='v > 1', reset='v = 0', refractory=1*ms, method='euler')
+    wall_sensors = NeuronGroup(11, model=eqs_sensors, threshold='v > 0.9', reset='v = 0', refractory=1*ms, method='euler')
     #wall_sensors.I = [5]
     #greater the frequency, the more it spikes
     spikes_sensors = SpikeMonitor(wall_sensors)
