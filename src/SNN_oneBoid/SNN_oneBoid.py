@@ -7,8 +7,8 @@ WIDTH = 1200
 HEIGHT = 900
 
 #start and end coords, WIDTH-
-X_START = 50 #400
-Y_START = 850 #100
+X_START = 50 #400 #50
+Y_START = 600 #100 #850
 X_GOAL = 1100
 Y_GOAL = 100
 
@@ -47,7 +47,7 @@ def run_SNN(I_values, dt):
     dv/dt = (I - v)/tau_sensors : 1
     I = I_values(t, i) : 1
     '''
-    wall_sensors = NeuronGroup(11, model=eqs_sensors, threshold='v > 0.9', reset='v = 0', refractory=1*ms, method='euler')
+    wall_sensors = NeuronGroup(11, model=eqs_sensors, threshold='v > 1.0e-7', reset='v = 0', refractory=1*ms, method='euler')
     #wall_sensors.I = [5]
     #greater the frequency, the more it spikes
     spikes_sensors = SpikeMonitor(wall_sensors)
@@ -111,12 +111,13 @@ def navigateBoids(dt):
         for ob in obList:
             boidToSquare = ob.shortestDistance(b_x, b_y)
             angleToSquare = ob.angleFromBoidToObject(b_x, b_y)
-            weight = 1/(boidToSquare**2)
+            weight = 1/((boidToSquare)**2)
             angleList.append(angleToSquare)
             weightList.append(weight)
-        op = burd.getOptimalHeading()
-        I_values = burd.drive_currents(dt, angleList, weightList, op)
+        # op = burd.getOptimalHeading()
+        # I_values = burd.drive_currents(dt, angleList, weightList, op)
 
+        I_values = burd.wall_sensor_input(dt, angleList, weightList)
         #send sensor input, receive actuator output
         actuator_spikes = run_SNN(I_values, dt)
         #run physics
