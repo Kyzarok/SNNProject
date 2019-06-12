@@ -67,9 +67,9 @@ def run_SNN(I_values, dt):
     dy/dt = -y/taus : 1
     '''
     actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>1', reset='v=0', method='exact')
-    synapses_ex = Synapses(wall_sensors, actuators, on_pre='y+=wex')
+    synapses_ex = Synapses(wall_sensors, actuators, on_pre='y+=winh')
     synapses_ex.connect(j='i')
-    synapses_inh = Synapses(wall_sensors, actuators, on_pre='y+=winh', delay=deltaI)
+    synapses_inh = Synapses(wall_sensors, actuators, on_pre='y+=wex', delay=deltaI)
     synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
     spikes = SpikeMonitor(actuators)
 
