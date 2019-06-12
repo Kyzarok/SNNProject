@@ -61,7 +61,7 @@ def run_SNN(I_avoid, I_attract, dt):
     # Command neurons
     tau = 1 * ms
     taus = 1.001 * ms
-    wex = 7
+    wex = 8
     winh = -2
     eqs_actuator = '''
     dv/dt = (x - v)/tau : 1
@@ -74,7 +74,7 @@ def run_SNN(I_avoid, I_attract, dt):
     synapses_inh = Synapses(negative_sensors, actuators, on_pre='y+=wex', delay=deltaI)
     synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
 
-    WEXCITE = 6
+    WEXCITE = 5
 
     synapses_EXCITE = Synapses(positive_sensors, actuators, on_pre='y+=WEXCITE')
     synapses_EXCITE.connect(j='i')
@@ -104,7 +104,7 @@ def init():
     square_1.setScale(OB_1_SCALE)
     square_2 = physicalWall.Square(x=OB_2_X, y=OB_2_Y, batch=drawBatch)
     square_2.setScale(OB_2_SCALE)
-    obList = [square_1]#, square_2]
+    obList = [square_1, square_2]
     boidList = [maverick]
 
 @gameWindow.event
@@ -122,9 +122,10 @@ def navigateBoids(dt):
         for ob in obList:
             boidToSquare = ob.shortestDistance(b_x, b_y)
             angleToSquare = ob.angleFromBoidToObject(b_x, b_y)
-            weight = 1/((boidToSquare)**2)
-            angleList.append(angleToSquare)
-            weightList.append(weight)
+            if boidToSquare < 150*ob.getScale():
+                weight = 1/((boidToSquare)**2)
+                weightList.append(weight)
+                angleList.append(angleToSquare)
         op = burd.getOptimalHeading()
         # I_values = burd.drive_currents(dt, angleList, weightList, op)
 
@@ -133,7 +134,7 @@ def navigateBoids(dt):
         #send sensor input, receive actuator output
         actuator_spikes = run_SNN(I_avoid, I_attract, dt)
         #run physics
-        burd.response(actuator_spikes, boidToSquare)
+        burd.num_response(actuator_spikes, boidToSquare)
 
     
 def update(dt):

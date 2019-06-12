@@ -89,7 +89,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
     def getScale(self):
         return self.scale
 
-    def response(self, actuator_spikes, weight):
+    def num_response(self, actuator_spikes, weight):
         print("actuator_spikes.count: ")
         print(actuator_spikes.count)
 
@@ -151,16 +151,6 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         BACKWARDS = True
 
         weight_bound = (1/(100**2)) * 1.5
-        # print(weight_bound)
-        
-        # calibrate = 1.0
-        # for w in weight:
-        #     print(w)
-        #     if w*10 > weight_bound:
-        #         calibrate *= w
-        
-        # print(calibrate)
-
         A_weight = [0.0] * 11
         frequency = [1.0] * 11
 
