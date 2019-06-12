@@ -8,7 +8,7 @@ HEIGHT = 900
 
 #start and end coords, WIDTH-
 X_START = 50 #400 #50
-Y_START = 600 #100 #850
+Y_START = 850 #100 #850 #600
 X_GOAL = 1100
 Y_GOAL = 100
 
@@ -47,7 +47,7 @@ def run_SNN(I_avoid, I_attract, dt):
     dv/dt = (I - v)/tau_sensors : 1
     I = I_avoid(t, i) : 1
     '''
-    negative_sensors = NeuronGroup(11, model=eqs_avoid, threshold='v > 1.0e-7', reset='v = 0', refractory=1*ms, method='euler')
+    negative_sensors = NeuronGroup(11, model=eqs_avoid, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler')
     neg_spikes_sensors = SpikeMonitor(negative_sensors)
     
 
@@ -55,7 +55,7 @@ def run_SNN(I_avoid, I_attract, dt):
     dv/dt = (I - v)/tau_sensors : 1
     I = I_attract(t, i) : 1
     '''
-    positive_sensors = NeuronGroup(11, model=eqs_attract, threshold='v > 0.9', reset='v = 0', refractory=1*ms, method='euler')
+    positive_sensors = NeuronGroup(11, model=eqs_attract, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler')
     pos_spikes_sensors = SpikeMonitor(positive_sensors)
 
     # Command neurons
@@ -68,7 +68,7 @@ def run_SNN(I_avoid, I_attract, dt):
     dx/dt = (y - x)/taus : 1 # alpha currents
     dy/dt = -y/taus : 1
     '''
-    actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>1', reset='v=0', method='exact')
+    actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>2', reset='v=0', method='exact')
     synapses_ex = Synapses(negative_sensors, actuators, on_pre='y+=winh')
     synapses_ex.connect(j='i')
     synapses_inh = Synapses(negative_sensors, actuators, on_pre='y+=wex', delay=deltaI)
@@ -150,7 +150,7 @@ def update(dt):
                 gameObj_2.handleCollisionWith(gameObj_1)
                 print('COLLISION')
                 exit()
-    dt = 1
+    dt = 0.5
     navigateBoids(dt)
 
     for obj in gameList:
@@ -159,5 +159,5 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 5)
+    pyglet.clock.schedule_interval(update, 3)
     pyglet.app.run()

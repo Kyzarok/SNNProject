@@ -150,8 +150,19 @@ class Boid(phy.Physical):#, Leaky.boid_net):
 
         BACKWARDS = True
 
+        weight_bound = (1/(100**2)) * 1.5
+        # print(weight_bound)
+        
+        # calibrate = 1.0
+        # for w in weight:
+        #     print(w)
+        #     if w*10 > weight_bound:
+        #         calibrate *= w
+        
+        # print(calibrate)
+
         A_weight = [0.0] * 11
-        frequency = [0.0] * 11
+        frequency = [1.0] * 11
 
         for a in range(len(angle)): #go through the list of obstacles
             for i in range(10): #go through each sensor
@@ -164,18 +175,19 @@ class Boid(phy.Physical):#, Leaky.boid_net):
                     current_sensor_orientation += 2*math.pi
 
                 if current_sensor_orientation <= angle[a] < current_sensor_orientation + math.pi/6:
+
                     BACKWARDS = False
-                    A_weight[i] = abs((diff/(math.pi/6))) * weight[a]
-                    A_weight[i+1] = (1 - abs(diff/(math.pi/6))) * weight[a]
-                    frequency[i] = 100 * (diff/(math.pi/6))
-                    frequency[i+1] = 100 * (1 - diff/(math.pi/6))
+                    
+                    A_weight[i] = (weight[a]/weight_bound)
+                    A_weight[i+1] = (weight[a]/weight_bound)
+
+                    frequency[i] *= 10 * (1+abs(diff/(math.pi/6)))
+                    frequency[i+1] *= 10 * (1+(1 - abs(diff/(math.pi/6))))
 
         if BACKWARDS:
-            print('NEEDS TO FLIP')
+            print('NEEDS_TO_FLIP_1')
 
-        print(A_weight)
-
-        A = 3
+        A = 1.0
         I_values = []
         for t in time:
             new = [0.0] * 11
@@ -185,12 +197,14 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         ret_values = TimedArray(I_values, 0.1*ms)
         return ret_values
 
+
+
     def optimal_sensor_input(self, dt, optimal):
         time = arange(int(dt / (0.1*ms)) + 1) * (0.1*ms)
 
-        # BACKWARDS = True
+        BACKWARDS = True
 
-        A_weight = [1.0] * 11
+        A_weight = [0.0] * 11
         frequency = [0.0] * 11
 
         for i in range(10): #go through each sensor
@@ -203,22 +217,22 @@ class Boid(phy.Physical):#, Leaky.boid_net):
                 current_sensor_orientation += 2*math.pi
 
             if current_sensor_orientation <= optimal < current_sensor_orientation + math.pi/6:
+                BACKWARDS = False
                 A_weight[i] = 10 * (abs(diff/(math.pi/6)))
                 A_weight[i+1] = 10 * ((1-abs(diff/(math.pi/6))))
-                frequency[i] *= (diff/(math.pi/6))*10
-                frequency[i+1] *= (1-diff/(math.pi/6))*10
+                frequency[i] = (diff/(math.pi/6)) * 10
+                frequency[i+1] = (1-diff/(math.pi/6)) * 10
 
-        # if BACKWARDS:
-        #     print('NEEDS TO FLIP')
+        if BACKWARDS:
+            print('NEEDS_TO_FLIP_2')
 
         print(A_weight)
 
-        A = 1
         I_values = []
         for t in time:
             new = [0.0] * 11
             for k in range(len(frequency)):
-                new[k] = (A*A_weight[k])*math.cos(2 * math.pi * (frequency[k]) * t)
+                new[k] = (A_weight[k])*math.cos(2 * math.pi * (frequency[k]) * t)
             I_values.append(new)
         ret_values = TimedArray(I_values, 0.1*ms)
         return ret_values
