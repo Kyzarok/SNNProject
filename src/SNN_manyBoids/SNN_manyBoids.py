@@ -28,7 +28,7 @@ boidStillFlying = True
 
 drawBatch = pyglet.graphics.Batch()
 
-titleLabel = pyglet.text.Label(text='SNN Single Boid Collision Avoidance', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
+titleLabel = pyglet.text.Label(text='SNN Multiple Boids Maze Navigation', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
 goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch=drawBatch)
 
 boidList = []
@@ -106,7 +106,7 @@ def update(dt):
                 gameObj_2.handleCollisionWith(gameObj_1)
                 print('COLLISION')
                 exit()
-    dt = 0.8
+    dt = 0.08
     navigateBoids(dt)
 
     for obj in gameList:
@@ -115,5 +115,5 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 3)
+    pyglet.clock.schedule_interval(update, 1/10)
     pyglet.app.run()

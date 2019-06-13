@@ -120,7 +120,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         BACKWARDS = True
 
         w_weight_bound = (1/(100**2)) * 1.5
-        b_weight_bound = (1/50**2)
+        b_weight_bound = (1/50**2) * 2
         A_weight = [0.0] * 11
         frequency = [1.0] * 11
 
@@ -189,8 +189,6 @@ class Boid(phy.Physical):#, Leaky.boid_net):
 
         # if BACKWARDS:
         #     print('NEEDS_TO_FLIP_2')
-
-        # print(A_weight)
 
         I_values = []
         for t in time:
