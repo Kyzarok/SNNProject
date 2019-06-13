@@ -16,8 +16,8 @@ Y_GOAL = 100
 OB_1_X = 400 #random.randint(200, 1000)
 OB_1_Y = 600 #random.randint(200, 700)
 OB_1_SCALE = 1.0
-OB_2_X = 350#800 #random.randint(200, 1000)
-OB_2_Y = 450#250 #random.randint(200, 700)
+OB_2_X = 800 #random.randint(200, 1000) #350
+OB_2_Y = 250 #random.randint(200, 700) #450
 OB_2_SCALE = 0.5
 
 #define window height and width
@@ -34,9 +34,66 @@ goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch
 boidList = []
 obList = []
 
+####################################################################################
+####################################################################################
+####################################################################################
+# # Parameters
+# deltaI = .7*ms  # inhibitory delay
+
+# tau_sensors = 0.1*ms
+# eqs_avoid = '''
+# dv/dt = (I_val - v)/tau_sensors : 1
+# # I = I_avoid(t, i) : 1
+# I_val : 1
+# '''
+# negative_sensors = NeuronGroup(11, model=eqs_avoid, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler')
+# neg_spikes_sensors = SpikeMonitor(negative_sensors)
+
+
+# eqs_attract= '''
+# dv/dt = (I_val - v)/tau_sensors : 1
+# # I = I_attract(t, i) : 1
+# I_val : 1
+# '''
+# positive_sensors = NeuronGroup(11, model=eqs_attract, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler')
+# pos_spikes_sensors = SpikeMonitor(positive_sensors)
+
+# # Command neurons
+# tau = 1 * ms
+# taus = 1.001 * ms
+# wex = 5
+# winh = -2
+# eqs_actuator = '''
+# dv/dt = (x - v)/tau : 1
+# dx/dt = (y - x)/taus : 1 # alpha currents
+# dy/dt = -y/taus : 1
+# '''
+# actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>2', reset='v=0', method='exact')
+# synapses_ex = Synapses(negative_sensors, actuators, on_pre='y+=winh')
+# synapses_ex.connect(j='i')
+# synapses_inh = Synapses(negative_sensors, actuators, on_pre='y+=wex', delay=deltaI)
+# synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
+
+# WEXCITE = 7
+
+# synapses_EXCITE = Synapses(positive_sensors, actuators, on_pre='y+=WEXCITE')
+# synapses_EXCITE.connect(j='i')
+
+
+# spikes = SpikeMonitor(actuators)
+
+
+####################################################################################
+####################################################################################
+####################################################################################
 
 def run_SNN(I_avoid, I_attract, dt):
     start_scope()
+
+    # duration = dt
+
+    # negative_sensors.I_val = I_avoid
+    # positive_sensors.I_val = I_attract
 
     # Parameters
     duration = dt
@@ -84,14 +141,10 @@ def run_SNN(I_avoid, I_attract, dt):
 
     run(duration)
 
-    # print(spikes.i)
     print("negative_sensors.count: ")
     print(neg_spikes_sensors.count)
     print("positive_sensors.count: ")
     print(pos_spikes_sensors.count)
-    # print("actuator_spikes_count: ")
-    # print(spikes.count)
-
     return spikes
 
 def init():
@@ -113,7 +166,7 @@ def on_draw():
     drawBatch.draw()
 
 def navigateBoids(dt):
-    dt = dt * 1000 *ms
+    dt *= 1000 * ms
     global boidList, obList
     for burd in boidList:
         b_x, b_y = burd.getPos()
@@ -127,8 +180,6 @@ def navigateBoids(dt):
                 weightList.append(weight)
                 angleList.append(angleToSquare)
         op = burd.getOptimalHeading()
-        # I_values = burd.drive_currents(dt, angleList, weightList, op)
-
         I_avoid = burd.wall_sensor_input(dt, angleList, weightList)
         I_attract = burd.optimal_sensor_input(dt, op)
         #send sensor input, receive actuator output
@@ -151,7 +202,7 @@ def update(dt):
                 gameObj_2.handleCollisionWith(gameObj_1)
                 print('COLLISION')
                 exit()
-    dt = 0.5
+    dt = 0.08
     navigateBoids(dt)
 
     for obj in gameList:
@@ -160,5 +211,5 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 3)
+    pyglet.clock.schedule_interval(update, 1/10)
     pyglet.app.run()

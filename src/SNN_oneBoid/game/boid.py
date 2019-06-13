@@ -28,6 +28,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
             self.rotation = -math.degrees(self.heading)
         self.x += self.velocity_x * dt
         self.y += self.velocity_y * dt
+        print("new_coords: " + str(self.x) + ' ' + str(self.y))
 
     def getPos(self):
         return self.position
@@ -174,8 +175,8 @@ class Boid(phy.Physical):#, Leaky.boid_net):
                     frequency[i] *= 10 * (1+abs(diff/(math.pi/6)))
                     frequency[i+1] *= 10 * (1+(1 - abs(diff/(math.pi/6))))
 
-        if BACKWARDS:
-            print('NEEDS_TO_FLIP_1')
+        # if BACKWARDS:
+        #     print('NEEDS_TO_FLIP_1')
 
         A = 1.0
         I_values = []
@@ -213,10 +214,10 @@ class Boid(phy.Physical):#, Leaky.boid_net):
                 frequency[i] = (diff/(math.pi/6)) * 10
                 frequency[i+1] = (1-diff/(math.pi/6)) * 10
 
-        if BACKWARDS:
-            print('NEEDS_TO_FLIP_2')
+        # if BACKWARDS:
+        #     print('NEEDS_TO_FLIP_2')
 
-        print(A_weight)
+        # print(A_weight)
 
         I_values = []
         for t in time:
