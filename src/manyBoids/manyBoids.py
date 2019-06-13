@@ -35,7 +35,7 @@ boidStillFlying = True
 
 drawBatch = pyglet.graphics.Batch()
 
-titleLabel = pyglet.text.Label(text='Multiple Boids Collision Avoidance', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
+titleLabel = pyglet.text.Label(text='Multiple Boids Maze Navigation', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
 goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch=drawBatch)
 #mLabel = pyglet.text.Label(text='Maverick', x=X_START, y=Y_START, batch=drawBatch)
 #gLabel = pyglet.text.Label(text='Goose', x=X_START + 50, y=Y_START - 50, batch=drawBatch)
