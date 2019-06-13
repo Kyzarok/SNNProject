@@ -16,8 +16,8 @@ Y_GOAL = 100
 OB_1_X = 400 #random.randint(200, 1000)
 OB_1_Y = 600 #random.randint(200, 700)
 OB_1_SCALE = 1.0
-OB_2_X = 800 #random.randint(200, 1000)
-OB_2_Y = 250 #random.randint(200, 700)
+OB_2_X = 350#800 #random.randint(200, 1000)
+OB_2_Y = 450#250 #random.randint(200, 700)
 OB_2_SCALE = 0.5
 
 #define window height and width
@@ -122,7 +122,7 @@ def navigateBoids(dt):
         for ob in obList:
             boidToSquare = ob.shortestDistance(b_x, b_y)
             angleToSquare = ob.angleFromBoidToObject(b_x, b_y)
-            if boidToSquare < 150*ob.getScale():
+            if boidToSquare < 150:
                 weight = 1/((boidToSquare)**2)
                 weightList.append(weight)
                 angleList.append(angleToSquare)
