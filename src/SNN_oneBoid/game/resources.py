@@ -6,7 +6,7 @@ def centerImage(image):
     image.anchor_y = image.height / 2
 
 # Tell pyglet where to find the resources
-pyglet.resource.path = ['/Users/kai/Documents/SNNProject/src/manyBoids/']
+pyglet.resource.path = ['/Users/kai/Documents/SNNProject/src/SNN_oneBoid/']
 pyglet.resource.reindex()
 
 # Load the resources
