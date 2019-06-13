@@ -52,6 +52,12 @@ def init():
 def on_draw():
     gameWindow.clear()
     drawBatch.draw()
+
+def navigateBoid(actuator_spikes):
+    global boidList
+    for burd in boidList:
+        burd.num_response(actuator_spikes)
+
     
 def update(dt):
     global boidList, obList
@@ -68,6 +74,8 @@ def update(dt):
                 print('COLLISION')
                 exit()
     dt = 0.08
+    actuator_spikes = util.receiveSpikes()
+    navigateBoid(actuator_spikes)
 
     for obj in gameList:
         obj.update(dt)

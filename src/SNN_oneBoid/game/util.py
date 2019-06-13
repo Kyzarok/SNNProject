@@ -1,6 +1,7 @@
 import pyglet, math
 boidList = []
 obList = []
+spikes = None
 
 def distance(point_1=(0, 0), point_2=(0, 0)):
     #Returns the distance between two points
@@ -38,6 +39,9 @@ def updateInput(dt):
 
 
 def sendSpikes(actuator_spikes):
-    global boidList, obList
-    for burd in boidList:
-        burd.num_response(actuator_spikes)
+    global spikes
+    spikes = actuator_spikes
+
+def receiveSpikes():
+    global spikes
+    return spikes
