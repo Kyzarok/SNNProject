@@ -79,6 +79,8 @@ def update(dt):
 
     for obj in gameList:
         obj.update(dt)
+    
+    util.setGameObjects(boidList, obList)
 
 if __name__ == '__main__':
     init()

@@ -64,6 +64,7 @@ actuator_spikes = SpikeMonitor(actuators, name='actuator_spikes')
 @network_operation(dt=dt)
 def change_I():
     util.sendSpikes(actuator_spikes)
+    actuator_spikes.count = [0] * 11
     I_avoid, I_attract = util.updateInput(dt)
     print('BOOP')
     i_arr_neg = I_avoid
