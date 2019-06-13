@@ -36,17 +36,32 @@ obList = []
 
 def init():
     global boidList, obList
-    b_x = X_START 
-    b_y = Y_START
-    maverick = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
-    goose = boid.Boid(x=b_x + 50, y=b_y, batch = drawBatch)
+
+    BOID_NUMBER = int(input('enter number of boids: '))
+    print(str(BOID_NUMBER))
+    
+    #init boids
+    i = 0
+    while i < BOID_NUMBER:
+        b_x = random.randint(X_START - 50, X_START + 50)
+        b_y = random.randint(Y_START - 50, Y_START + 50)
+        new_boid = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
+        append = True
+        for burd in boidList:
+            if util.distance(new_boid.getPos(), burd.getPos()) < 30:
+                append = False
+        if append:
+            boidList.append(new_boid)
+        else:
+            i-=1
+        i+=1
+
     #init obstacles
     square_1 = physicalWall.Square(x=OB_1_X, y=OB_1_Y, batch=drawBatch)
     square_1.setScale(OB_1_SCALE)
     square_2 = physicalWall.Square(x=OB_2_X, y=OB_2_Y, batch=drawBatch)
     square_2.setScale(OB_2_SCALE)
     obList = [square_1, square_2]
-    boidList = [maverick, goose]
 
 @gameWindow.event
 def on_draw():
