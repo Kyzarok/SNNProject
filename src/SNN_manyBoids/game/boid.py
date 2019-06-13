@@ -222,6 +222,8 @@ class Boid(phy.Physical):#, Leaky.boid_net):
     def runBoidBrain(self, I_avoid, I_attract, dt):
         start_scope()
 
+        #NAME EVERYTHING
+
         # Parameters
         duration = dt
         deltaI = .7*ms  # inhibitory delay
@@ -229,9 +231,10 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         tau_sensors = 0.1*ms
         eqs_avoid = '''
         dv/dt = (I - v)/tau_sensors : 1
-        I = I_avoid(t, i) : 1
+        I = I_avoid(t, i) :v1
         '''
-        negative_sensors = NeuronGroup(11, model=eqs_avoid, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler')
+        negative_sensors = NeuronGroup(11, model=eqs_avoid, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler', name='negative_sensors')
+        # negative_sensors.I_val = I_avoid
         neg_spikes_sensors = SpikeMonitor(negative_sensors)
         
 
@@ -239,7 +242,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         dv/dt = (I - v)/tau_sensors : 1
         I = I_attract(t, i) : 1
         '''
-        positive_sensors = NeuronGroup(11, model=eqs_attract, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler')
+        positive_sensors = NeuronGroup(11, model=eqs_attract, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler', name='positive_sensors')
         pos_spikes_sensors = SpikeMonitor(positive_sensors)
 
         # Command neurons
@@ -252,7 +255,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         dx/dt = (y - x)/taus : 1 # alpha currents
         dy/dt = -y/taus : 1
         '''
-        actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>2', reset='v=0', method='exact')
+        actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>2', reset='v=0', method='exact', name='actuators')
         synapses_ex = Synapses(negative_sensors, actuators, on_pre='y+=winh')
         synapses_ex.connect(j='i')
         synapses_inh = Synapses(negative_sensors, actuators, on_pre='y+=wex', delay=deltaI)

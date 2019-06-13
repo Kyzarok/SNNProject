@@ -1,5 +1,6 @@
 import pyglet, math
-
+boidList = []
+obList = []
 
 def distance(point_1=(0, 0), point_2=(0, 0)):
     #Returns the distance between two points
@@ -9,3 +10,34 @@ def centerImage(image):
     #Sets an image's anchor point to its center
     image.anchor_x = image.width / 2
     image.anchor_y = image.height / 2
+
+def setGameObjects(bList, oList):
+    global boidList, obList
+    boidList = bList
+    obList = oList
+
+def updateInput(dt):
+    global boidList, obList
+    I_avoid = None
+    I_attract = None
+    for burd in boidList:
+        b_x, b_y = burd.getPos()
+        angleList = []
+        weightList = []
+        for ob in obList:
+            boidToSquare = ob.shortestDistance(b_x, b_y)
+            angleToSquare = ob.angleFromBoidToObject(b_x, b_y)
+            if boidToSquare < 150:
+                weight = 1/((boidToSquare)**2)
+                weightList.append(weight)
+                angleList.append(angleToSquare)
+        op = burd.getOptimalHeading()
+        I_avoid = burd.wall_sensor_input(dt, angleList, weightList)
+        I_attract = burd.optimal_sensor_input(dt, op)
+    return I_avoid, I_attract
+
+
+def sendSpikes(actuator_spikes):
+    global boidList, obList
+    for burd in boidList:
+        burd.num_response(actuator_spikes)
