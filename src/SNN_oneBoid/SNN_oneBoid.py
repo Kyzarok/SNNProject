@@ -122,6 +122,89 @@ def RUN_PHYSICS(physics_conn):
     pyglet.clock.schedule_interval(update, 1.1, physics_conn)
     pyglet.app.run()
 
+def RUN_NET(network_conn):
+    start_scope()
+
+    # Parameters
+    
+    dt = 1000 * ms
+    mod_val = dt
+    my_default = 0.1 * ms
+    deltaI = .7*ms  # inhibitory delay
+
+    dummy_arr = []
+    dummy = [0] * 11
+    time = arange(int(dt / my_default) + 1) * my_default
+
+    for dummy_t in time:
+        dummy_arr.append(dummy)
+
+    i_arr_neg = dummy_arr
+    i_arr_pos = dummy_arr
+
+    I_neg = TimedArray(values=i_arr_neg, dt = my_default, name='I_neg')
+    I_pos = TimedArray(values=i_arr_pos, dt = my_default, name='I_pos')
+
+    tau_sensors = my_default
+    eqs_avoid = '''
+    dv/dt = (I_neg(t%mod_val, i) - v)/tau_sensors : 1
+    '''
+    negative_sensors = NeuronGroup(11, model=eqs_avoid, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler', name='negative_sensors')
+    neg_spikes_sensors = SpikeMonitor(negative_sensors, name='neg_spikes_sensors')
+
+    eqs_attract = '''
+    dv/dt = (I_pos(t%mod_val, i) - v)/tau_sensors : 1
+    '''
+    positive_sensors = NeuronGroup(11, model=eqs_attract, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler', name='positive_sensors')
+    pos_spikes_sensors = SpikeMonitor(positive_sensors, name='pos_spikes_sensors')
+
+    # Command neurons
+    tau = 1 * ms
+    taus = 1.001 * ms
+    wex = 5
+    winh = -2
+    eqs_actuator = '''
+    dv/dt = (x - v)/tau : 1
+    dx/dt = (y - x)/taus : 1 # alpha currents
+    dy/dt = -y/taus : 1
+    '''
+    actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>2', reset='v=0', method='exact', name='actuators')
+    synapses_ex = Synapses(negative_sensors, actuators, on_pre='y+=winh', name='synapses_ex')
+    synapses_ex.connect(j='i')
+    synapses_inh = Synapses(negative_sensors, actuators, on_pre='y+=wex', delay=deltaI, name='synapses_inh')
+    synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
+
+    WEXCITE = 7
+
+    synapses_EXCITE = Synapses(positive_sensors, actuators, on_pre='y+=WEXCITE', name='synapses_EXCITE')
+    synapses_EXCITE.connect(j='i')
+
+
+    @network_operation(dt=dt)
+    def change_I():
+        print("neg_spike_sensors: ")
+        print(neg_spikes_sensors.count)
+        print("pos_spike_sensors: ")
+        print(pos_spikes_sensors.count)
+        print('actuator_spikes.count: ')
+        print(actuator_spikes.count)
+        spikes = str(actuator_spikes.count)
+        network_conn.send(spikes)
+        print('network send')
+        I_avoid, I_attract = network_conn.recv()
+        print('network receive')
+        i_arr_neg[:] = I_avoid
+        i_arr_pos[:] = I_attract
+        I_neg = TimedArray(values=i_arr_neg, dt = my_default, name='I_neg')
+        I_pos = TimedArray(values=i_arr_pos, dt = my_default, name='I_pos')
+
+
+    actuator_spikes = SpikeMonitor(actuators, name='actuator_spikes')
+
+    print('BEGIN NEURAL NETWORK')
+    run(100*dt)
+    print('SNN STOPPED')
+
 if __name__ == '__main__':
     mp.set_start_method('spawn')
     network_conn, physics_conn = mp.Pipe()
@@ -130,7 +213,7 @@ if __name__ == '__main__':
     network_conn.send(None)
     p_1 = mp.Process(target=RUN_PHYSICS, args=(physics_conn,))
     print('SETTING NETWORK')
-    p_2 = mp.Process(target=boidBrain.RUN_NET, args=(network_conn,))
+    p_2 = mp.Process(target=RUN_NET, args=(network_conn,))
     print('STARTING PHYSICS')
     p_1.start()
     print('STARTING NETWORK')
