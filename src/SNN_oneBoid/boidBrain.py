@@ -60,14 +60,16 @@ def RUN_NET(network_conn):
     synapses_EXCITE.connect(j='i')
 
     actuator_spikes = SpikeMonitor(actuators, name='actuator_spikes')
-
+    spike_data = actuator_spikes.count
 
     @network_operation(dt=dt)
     def change_I():
         #send spikes to physics
-        spikes  = actuator_spikes.count
+        spikes = spike_data[:]
+        print('spikes:')
+        print(spikes)
         network_conn.send(spikes)
-        actuator_spikes.count = [0] * 11
+        # actuator_spikes = NEEDS TO BECOME )
         I_avoid, I_attract = network_conn.recv()
         print('BOOP')
         i_arr_neg = I_avoid

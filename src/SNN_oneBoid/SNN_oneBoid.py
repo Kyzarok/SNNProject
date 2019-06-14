@@ -36,6 +36,7 @@ goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch
 
 boidList = []
 obList = []
+initialised = False
 
 def init():
     global boidList, obList
@@ -56,9 +57,10 @@ def on_draw():
     drawBatch.draw()
 
 def navigateBoid(actuator_spikes):
-    global boidList
-    for burd in boidList:
-        burd.num_response(actuator_spikes)
+    global boidList, initialised
+    if initialised:
+        for burd in boidList:
+            burd.num_response(actuator_spikes)
 
 def updateInput(dt):
     global boidList, obList
@@ -81,7 +83,7 @@ def updateInput(dt):
     return I_avoid, I_attract
     
 def update(dt, physics_conn):
-    global boidList, obList
+    global boidList, obList, initialised
     gameList = obList + boidList
     for i in range(len(gameList)):
         for j in range(i+1, len(gameList)):
@@ -93,13 +95,15 @@ def update(dt, physics_conn):
                 gameObj_2.handleCollisionWith(gameObj_1)
                 print('COLLISION')
                 exit()
-    dt = 0.08
 
     #receive spikes from network
 
     print('about to receive actuator spikes')
     navigateBoid(physics_conn.recv())
     print('received actuator spikes')
+
+    if not (initialised):
+        initialised = True
 
     for obj in gameList:
         obj.update(dt)
@@ -109,7 +113,7 @@ def update(dt, physics_conn):
 
 def RUN_PHYSICS(physics_conn):
     init()
-    pyglet.clock.schedule_interval(update, 1, physics_conn)
+    pyglet.clock.schedule_interval(update, 0.08, physics_conn)
     pyglet.app.run()
 
 if __name__ == '__main__':
