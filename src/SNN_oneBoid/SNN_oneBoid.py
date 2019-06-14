@@ -1,6 +1,8 @@
-import numpy, pyglet, time, random
+import numpy, pyglet, time, random, boidBrain
 from game import physicalObject, physicalWall, boid, resources, load, util
 from brian2 import *
+from multiprocessing import Process, Pipe
+from functools import wraps
 
 #dimensions for window
 WIDTH = 1200
@@ -46,7 +48,6 @@ def init():
     square_2.setScale(OB_2_SCALE)
     obList = [square_1, square_2]
     boidList = [maverick]
-    util.setGameObjects(boidList, obList)
 
 @gameWindow.event
 def on_draw():
@@ -58,10 +59,28 @@ def navigateBoid(actuator_spikes):
     for burd in boidList:
         burd.num_response(actuator_spikes)
 
-    
-def update(dt):
+def updateInput(dt):
     global boidList, obList
-
+    I_avoid = None
+    I_attract = None
+    for burd in boidList:
+        b_x, b_y = burd.getPos()
+        angleList = []
+        weightList = []
+        for ob in obList:
+            boidToSquare = ob.shortestDistance(b_x, b_y)
+            angleToSquare = ob.angleFromBoidToObject(b_x, b_y)
+            if boidToSquare < 150:
+                weight = 1/((boidToSquare)**2)
+                weightList.append(weight)
+                angleList.append(angleToSquare)
+        op = burd.getOptimalHeading()
+        I_avoid = burd.wall_sensor_input(dt, angleList, weightList)
+        I_attract = burd.optimal_sensor_input(dt, op)
+    return I_avoid, I_attract
+    
+def update(dt, network_conn, physics_conn):
+    global boidList, obList
     gameList = obList + boidList
     for i in range(len(gameList)):
         for j in range(i+1, len(gameList)):
@@ -74,15 +93,37 @@ def update(dt):
                 print('COLLISION')
                 exit()
     dt = 0.08
-    actuator_spikes = util.receiveSpikes()
-    navigateBoid(actuator_spikes)
+
+    #receive spikes from network
+
+    print('got to here')
+    actuator_spikes_count = physics_conn.recv()
+    print('received spikes')
+
+    navigateBoid(actuator_spikes_count)
 
     for obj in gameList:
         obj.update(dt)
     
-    util.setGameObjects(boidList, obList)
+    physics_conn.send(updateInput(dt))
+    print('sent updated input')
+
+def RUN_PHYSICS(network_conn, physics_conn):
+    pyglet.clock.schedule_interval(update, 1, network_conn, physics_conn)
+    pyglet.app.run()
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 1)
-    pyglet.app.run()
+    network_conn, physics_conn = Pipe()
+    print('SETTING PHYSICS')
+    #dummy send for first iteration
+    network_conn.send(None)
+    p_1 = Process(target=RUN_PHYSICS, args=(network_conn, physics_conn,))
+    print('SETTING NETWORK')
+    p_2 = Process(target=boidBrain.RUN_NET, args=(physics_conn, network_conn,))
+    print('STARTING PHYSICS')
+    p_1.start()
+    p_1.join()
+    print('STARTING NETWORK')
+    p_2.start()
+    p_2.join()
