@@ -78,6 +78,8 @@ def RUN_NET(network_conn):
         # print(I_attract)
         i_arr_neg[:] = I_avoid
         i_arr_pos[:] = I_attract
+        I_neg = TimedArray(values=i_arr_neg, dt = my_default, name='I_neg')
+        I_pos = TimedArray(values=i_arr_pos, dt = my_default, name='I_pos')
 
     print('BEGIN NEURAL NETWORK')
     run(100*dt)
