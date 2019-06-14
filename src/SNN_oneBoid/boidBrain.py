@@ -1,7 +1,7 @@
 from brian2 import *
 from game import util
 
-def RUN_NET(physics_conn, network_conn):
+def RUN_NET(network_conn):
     start_scope()
 
     # Parameters
@@ -65,7 +65,8 @@ def RUN_NET(physics_conn, network_conn):
     @network_operation(dt=dt)
     def change_I():
         #send spikes to physics
-        network_conn.send(actuator_spikes.count)
+        spikes  = actuator_spikes.count
+        network_conn.send(spikes)
         actuator_spikes.count = [0] * 11
         I_avoid, I_attract = network_conn.recv()
         print('BOOP')
@@ -74,6 +75,7 @@ def RUN_NET(physics_conn, network_conn):
 
     print('here')
     run(duration)
+    print('run err')
 
     print("negative_sensors.count: ")
     print(neg_spikes_sensors.count)

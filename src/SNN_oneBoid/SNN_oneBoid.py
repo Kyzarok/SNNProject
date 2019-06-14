@@ -1,8 +1,9 @@
 import numpy, pyglet, time, random, boidBrain
 from game import physicalObject, physicalWall, boid, resources, load, util
 from brian2 import *
-from multiprocessing import Process, Pipe
-from functools import wraps
+import multiprocessing as mp
+# from multiprocessing import Process, Pipe
+
 
 #dimensions for window
 WIDTH = 1200
@@ -79,7 +80,7 @@ def updateInput(dt):
         I_attract = burd.optimal_sensor_input(dt, op)
     return I_avoid, I_attract
     
-def update(dt, network_conn, physics_conn):
+def update(dt, physics_conn):
     global boidList, obList
     gameList = obList + boidList
     for i in range(len(gameList)):
@@ -96,11 +97,9 @@ def update(dt, network_conn, physics_conn):
 
     #receive spikes from network
 
-    print('got to here')
-    actuator_spikes_count = physics_conn.recv()
-    print('received spikes')
-
-    navigateBoid(actuator_spikes_count)
+    print('about to receive actuator spikes')
+    navigateBoid(physics_conn.recv())
+    print('received actuator spikes')
 
     for obj in gameList:
         obj.update(dt)
@@ -108,22 +107,21 @@ def update(dt, network_conn, physics_conn):
     physics_conn.send(updateInput(dt))
     print('sent updated input')
 
-def RUN_PHYSICS(network_conn, physics_conn):
-    pyglet.clock.schedule_interval(update, 1, network_conn, physics_conn)
+def RUN_PHYSICS(physics_conn):
+    init()
+    pyglet.clock.schedule_interval(update, 1, physics_conn)
     pyglet.app.run()
 
 if __name__ == '__main__':
-    init()
-    network_conn, physics_conn = Pipe()
+    mp.set_start_method('spawn')
+    network_conn, physics_conn = mp.Pipe()
     print('SETTING PHYSICS')
     #dummy send for first iteration
     network_conn.send(None)
-    p_1 = Process(target=RUN_PHYSICS, args=(network_conn, physics_conn,))
+    p_1 = mp.Process(target=RUN_PHYSICS, args=(physics_conn,))
     print('SETTING NETWORK')
-    p_2 = Process(target=boidBrain.RUN_NET, args=(physics_conn, network_conn,))
+    p_2 = mp.Process(target=boidBrain.RUN_NET, args=(network_conn,))
     print('STARTING PHYSICS')
     p_1.start()
-    p_1.join()
     print('STARTING NETWORK')
     p_2.start()
-    p_2.join()

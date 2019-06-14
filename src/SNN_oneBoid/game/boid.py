@@ -90,25 +90,28 @@ class Boid(phy.Physical):#, Leaky.boid_net):
     def getScale(self):
         return self.scale
 
-    def num_response(self, actuator_spikes):
-        print("actuator_spikes.count: ")
-        print(actuator_spikes.count)
+    def num_response(self, actuator_spikes_count):
+        if actuator_spikes_count != None:
+            print("actuator_spikes.count: ")
+            print(actuator_spikes_count)
 
-        new_heading = 0.0
+            new_heading = 0.0
 
-        total = sum(actuator_spikes.count)
-        normalised = [x/total for x in actuator_spikes.count]
+            total = sum(actuator_spikes_count)
+            normalised = [x/total for x in actuator_spikes_count]
 
-        for i in range(len(normalised)):
-            new_heading += normalised[i] * ((-5*math.pi/6) + (i*math.pi/6))
+            for i in range(len(normalised)):
+                new_heading += normalised[i] * ((-5*math.pi/6) + (i*math.pi/6))
 
-        self.heading += new_heading
+            self.heading += new_heading
 
-        if new_heading > math.pi:
-            new_heading += -2*math.pi
-        elif new_heading < -math.pi:
-            new_heading += 2*math.pi
-        print(self.heading)
+            if new_heading > math.pi:
+                new_heading += -2*math.pi
+            elif new_heading < -math.pi:
+                new_heading += 2*math.pi
+            print(self.heading)
+        else:
+            print('INITIALISING GUI')
 
 
         #BELOW IS BASED OFF OF FREQUENCIES
