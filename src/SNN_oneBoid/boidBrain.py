@@ -26,14 +26,16 @@ def RUN_NET(network_conn):
 
     tau_sensors = my_default
     eqs_avoid = '''
-    dv/dt = (I_neg(t%mod_val, i) - v)/tau_sensors : 1
+    dv/dt = (I - v)/tau_sensors : 1
+    I = I_neg(t%mod_val, i) : 1
     '''
     negative_sensors = NeuronGroup(11, model=eqs_avoid, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler', name='negative_sensors')
     neg_spikes_sensors = SpikeMonitor(negative_sensors, name='neg_spikes_sensors')
 
 
     eqs_attract= '''
-    dv/dt = (I_pos(t%mod_val, i) - v)/tau_sensors : 1
+    dv/dt = (I- v)/tau_sensors : 1
+    I = I_pos(t%mod_val, i) : 1
     '''
     positive_sensors = NeuronGroup(11, model=eqs_attract, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler', name='positive_sensors')
     pos_spikes_sensors = SpikeMonitor(positive_sensors, name='pos_spikes_sensors')
@@ -74,12 +76,11 @@ def RUN_NET(network_conn):
         print('network send')
         I_avoid, I_attract = network_conn.recv()
         print('network receive')
-        # print('IN NETWORK')
-        # print(I_attract)
         i_arr_neg[:] = I_avoid
         i_arr_pos[:] = I_attract
         I_neg = TimedArray(values=i_arr_neg, dt = my_default, name='I_neg')
         I_pos = TimedArray(values=i_arr_pos, dt = my_default, name='I_pos')
+
 
     print('BEGIN NEURAL NETWORK')
     run(100*dt)
