@@ -30,14 +30,14 @@ def RUN_NET(network_conn):
 
     tau_sensors = step
     eqs_avoid = '''
-    dv/dt = (I_neg(t % mod_val, i) - v)/tau_sensors : 1
+    dv/dt = (I_neg(t, i) - v)/tau_sensors : 1
     '''
     negative_sensors = NeuronGroup(11, model=eqs_avoid, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler', name='negative_sensors')
     neg_spikes_sensors = SpikeMonitor(negative_sensors, name='neg_spikes_sensors')
 
 
     eqs_attract= '''
-    dv/dt = (I_pos(t % mod_val, i) - v)/tau_sensors : 1
+    dv/dt = (I_pos(t, i) - v)/tau_sensors : 1
     '''
     positive_sensors = NeuronGroup(11, model=eqs_attract, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler', name='positive_sensors')
     pos_spikes_sensors = SpikeMonitor(positive_sensors, name='pos_spikes_sensors')
@@ -68,14 +68,16 @@ def RUN_NET(network_conn):
     @network_operation(dt=dt)
     def change_I():
         print('actuator_spikes.count: ')
-        print(actuator_spikes.count)
-        dill.loads(dill.dumps(weakref.WeakKeyDictionary()))
-        dill.loads(dill.dumps(weakref.WeakValueDictionary()))
-        dill.loads(dill.dumps(weakref.ref(actuator_spikes)))
-        dill.loads(dill.dumps(weakref.ref(SpikeMonitor())))
-        dill.loads(dill.dumps(weakref.proxy(actuator_spikes)))
-        dill.loads(dill.dumps(weakref.proxy(SpikeMonitor())))
-        spikes = copy.deepcopy(actuator_spikes.count)
+        print(str(actuator_spikes.count))
+        # dill.loads(dill.dumps(weakref.WeakKeyDictionary()))
+        # dill.loads(dill.dumps(weakref.WeakValueDictionary()))
+        # #gets past here
+        # dill.loads(dill.dumps(weakref.ref(actuator_spikes)))
+        # #STUFF GOES WRONG FROM THE ABOVE LINE
+        # dill.loads(dill.dumps(weakref.ref(SpikeMonitor(actuators, name='actuator_spikes'))))
+        # dill.loads(dill.dumps(weakref.proxy(actuator_spikes)))
+        # dill.loads(dill.dumps(weakref.proxy(SpikeMonitor(actuators, name='actuator_spikes'))))
+        spikes = str(actuator_spikes.count)
         # for i in range(11):
         #     spikes.append(actuator_spikes.count[i])
         #send spikes to physics

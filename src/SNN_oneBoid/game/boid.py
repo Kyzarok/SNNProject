@@ -3,6 +3,8 @@ import pyglet, math, random, numpy
 from game import resources, util
 from brian2 import *
 from multiprocessing import Process, Pipe
+import re
+
 
 class Boid(phy.Physical):#, Leaky.boid_net):
 
@@ -91,9 +93,26 @@ class Boid(phy.Physical):#, Leaky.boid_net):
     def getScale(self):
         return self.scale
 
-    def num_response(self, actuator_spikes):
-        # print("actuator_spikes.count: ")
-        # print(actuator_spikes)
+    def num_response(self, actuator_spikes_literal):
+        # print("actuator_spikes_literal: ")
+        # print(actuator_spikes_literal)
+        # res = re.search('<actuator_spikes.count: array((.+?), dtype=int32)>', str(actuator_spikes_literal))
+
+        l_bracket_position = actuator_spikes_literal.find('[')
+        r_bracket_position = actuator_spikes_literal.find(']')
+
+        res = actuator_spikes_literal[l_bracket_position + 1 : r_bracket_position - 1]
+
+        actuator_spikes = []
+        for i in range(10):
+            index = res.find(',')
+            if index:
+                actuator_spikes.append(int(res[:index]))
+                res = res[index + 1:]
+            else:
+                actuator_spikes.append(int(res))
+        print("actuator_spikes: ")
+        print(actuator_spikes)
 
         new_heading = 0.0
 
@@ -111,7 +130,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
             new_heading += -2*math.pi
         elif new_heading < -math.pi:
             new_heading += 2*math.pi
-        print('NEW OPTIMAL')
+        print('NEW HEADING')
         print(self.heading)
 
 

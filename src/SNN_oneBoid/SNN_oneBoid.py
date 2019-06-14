@@ -56,11 +56,11 @@ def on_draw():
     gameWindow.clear()
     drawBatch.draw()
 
-def navigateBoid(actuator_spikes):
+def navigateBoid(actuator_spikes_literal):
     global boidList, initialised
     if initialised:
         for burd in boidList:
-            burd.num_response(actuator_spikes)
+            burd.num_response(actuator_spikes_literal)
 
 def updateInput(dt):
     global boidList, obList
