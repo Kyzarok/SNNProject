@@ -192,4 +192,6 @@ class Boid(phy.Physical):#, Leaky.boid_net):
             for k in range(len(frequency)):
                 new[k] = (A_weight[k])*math.cos(2 * math.pi * (frequency[k]) * t)
             I_values.append(new)
+        # print('IN BOID')
+        # print(frequency)
         return I_values

@@ -1,15 +1,10 @@
 from brian2 import *
-import dill
-import weakref
-import copy
-from multiprocessing import Process, Pipe
+import multiprocessing as mp
 
 def RUN_NET(network_conn):
     start_scope()
 
     # Parameters
-
-    initialised = False
     
     dt = 1000 * ms
     mod_val = dt
@@ -79,6 +74,8 @@ def RUN_NET(network_conn):
         print('network send')
         I_avoid, I_attract = network_conn.recv()
         print('network receive')
+        # print('IN NETWORK')
+        # print(I_attract)
         i_arr_neg[:] = I_avoid
         i_arr_pos[:] = I_attract
 
