@@ -94,10 +94,6 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         return self.scale
 
     def num_response(self, actuator_spikes_literal):
-        # print("actuator_spikes_literal: ")
-        # print(actuator_spikes_literal)
-        # res = re.search('<actuator_spikes.count: array((.+?), dtype=int32)>', str(actuator_spikes_literal))
-
         l_bracket_position = actuator_spikes_literal.find('[')
         r_bracket_position = actuator_spikes_literal.find(']')
 
@@ -111,8 +107,6 @@ class Boid(phy.Physical):#, Leaky.boid_net):
                 res = res[index + 1:]
             else:
                 actuator_spikes.append(int(res))
-        print("actuator_spikes: ")
-        print(actuator_spikes)
 
         new_heading = 0.0
 
@@ -190,6 +184,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
                 A_weight[i+1] = 10 * ((1-abs(diff/(math.pi/6))))
                 frequency[i] = (diff/(math.pi/6)) * 10
                 frequency[i+1] = (1-diff/(math.pi/6)) * 10
+    
 
         I_values = []
         for t in time:

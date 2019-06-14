@@ -97,22 +97,29 @@ def update(dt, physics_conn):
                 print('COLLISION')
                 exit()
 
-    #receive spikes from network
-    navigateBoid(physics_conn.recv())
-    print('physics receive')
 
-    if not (initialised):
-        initialised = True
+    #receive spikes from network
+    new_spikes = physics_conn.recv()
+    print('physics receive')
+    #print(new_spikes)
+
+    navigateBoid(new_spikes)
+
+    initialised = True
+
+    dt = 1
 
     for obj in gameList:
         obj.update(dt)
+
+    I_values = updateInput(dt)
     
-    physics_conn.send(updateInput(dt))
+    physics_conn.send(I_values)
     print('physics send')
 
 def RUN_PHYSICS(physics_conn):
     init()
-    pyglet.clock.schedule_interval(update, 1, physics_conn)
+    pyglet.clock.schedule_interval(update, 1.1, physics_conn)
     pyglet.app.run()
 
 if __name__ == '__main__':
