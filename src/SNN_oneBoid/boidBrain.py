@@ -1,11 +1,15 @@
 from brian2 import *
-from game import util
+import dill
+import weakref
+import copy
+from multiprocessing import Process, Pipe
 
 def RUN_NET(network_conn):
     start_scope()
 
     # Parameters
 
+    initialised = False
     duration = 100 * 1000 * ms
     dt = 1500 * ms
     mod_val = dt
@@ -61,31 +65,35 @@ def RUN_NET(network_conn):
 
     actuator_spikes = SpikeMonitor(actuators, name='actuator_spikes')
 
-    def create_change_I(spike_data, i_arr_n, i_arr_p):
-        @network_operation(dt=dt)
-        def change_I():
-            #send spikes to physics
-            spikes = spike_data[:]
-            print('spikes:')
-            print(spikes)
-            network_conn.send(spikes)
-            print('network send')
-            # actuator_spikes = NEEDS TO BECOME 0
-            I_avoid, I_attract = network_conn.recv()
-            print('network receive')
-            i_arr_n = I_avoid
-            i_arr_p = I_attract
-        return change_I
-    
-    change_I = create_change_I(actuator_spikes.count, i_arr_neg, i_arr_pos)
+    @network_operation(dt=dt)
+    def change_I():
+        print('actuator_spikes.count: ')
+        print(actuator_spikes.count)
+        dill.loads(dill.dumps(weakref.WeakKeyDictionary()))
+        dill.loads(dill.dumps(weakref.WeakValueDictionary()))
+        dill.loads(dill.dumps(weakref.ref(actuator_spikes)))
+        dill.loads(dill.dumps(weakref.ref(SpikeMonitor())))
+        dill.loads(dill.dumps(weakref.proxy(actuator_spikes)))
+        dill.loads(dill.dumps(weakref.proxy(SpikeMonitor())))
+        spikes = copy.deepcopy(actuator_spikes.count)
+        # for i in range(11):
+        #     spikes.append(actuator_spikes.count[i])
+        #send spikes to physics
+        # spikes = None
+        # with open('hackySolution.pkl', 'wb') as file:
+        #     dill.dump(actuator_spikes.count, file)
+        # with open('hackySolution.pkl', 'rb') as file:
+        #     spikes = dill.load(file)
+
+        network_conn.send(spikes)
+        print('network send')
+        # actuator_spikes.count[:] = 0
+        I_avoid, I_attract = network_conn.recv()
+        print('network receive')
+        i_arr_neg[:] = I_avoid
+        i_arr_pos[:] = I_attract
 
 
 
     print('BEGIN NEURAL NETWORK')
     run(duration)
-    # print('run err')
-
-    # print("negative_sensors.count: ")
-    # print(neg_spikes_sensors.count)
-    # print("positive_sensors.count: ")
-    # print(pos_spikes_sensors.count)

@@ -2,6 +2,7 @@ from game import physicalObject as phy
 import pyglet, math, random, numpy
 from game import resources, util
 from brian2 import *
+from multiprocessing import Process, Pipe
 
 class Boid(phy.Physical):#, Leaky.boid_net):
 
@@ -113,41 +114,6 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         print('NEW OPTIMAL')
         print(self.heading)
 
-
-        #BELOW IS BASED OFF OF FREQUENCIES
-        # spike_frequency = [0.] * 11
-        # for i in range(11):
-        #     timings = []
-        #     index = 0
-        #     for j in indices:
-        #         if i == j: #if desired sensors
-        #             timings.append(times[index])
-        #         index += 1
-        #     #we now have the various timings that a specific sensor spiked
-        #     delta_timings = [0.] * (len(timings) - 1)
-        #     for k in range(len(timings)-1):
-        #         delta_timings[k] = timings[k+1] - timings[k]
-        #     average_delta_t = sum(delta_timings)/len(delta_timings)
-        #     if average_delta_t > 0:
-        #         spike_frequency[i] = 1/average_delta_t
-        # # print("spike_frequency: ")
-        # # print(spike_frequency)
-        # total = sum(spike_frequency)
-        # # print("total: ")
-        # # print(total)
-        # spike_weight = [x/total for x in spike_frequency]
-        # print("spike_weight: ")
-        # print(spike_weight)
-        # tmp = -5*math.pi/6 + self.heading
-        # for i in range(len(spike_weight)):
-        #     tmp += spike_weight[i] * (i * math.pi/6)
-        # if tmp < -math.pi:
-        #     self.heading = tmp + 2*math.pi
-        # elif tmp > math.pi:
-        #     self.heading = -2*math.pi + tmp
-        # else:
-        #     self.heading = tmp
-        # print(self.heading)
 
     def wall_sensor_input(self, dt, angle, weight):
         time = arange(int(dt / (0.1*ms)) + 1) * (0.1*ms)
