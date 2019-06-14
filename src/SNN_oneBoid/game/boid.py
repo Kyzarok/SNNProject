@@ -28,7 +28,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
             self.rotation = -math.degrees(self.heading)
         self.x += self.velocity_x * dt
         self.y += self.velocity_y * dt
-        print("new_coords: " + str(self.x) + ' ' + str(self.y))
+        # print("new_coords: " + str(self.x) + ' ' + str(self.y))
 
     def getPos(self):
         return self.position
@@ -91,8 +91,8 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         return self.scale
 
     def num_response(self, actuator_spikes):
-        print("actuator_spikes.count: ")
-        print(actuator_spikes)
+        # print("actuator_spikes.count: ")
+        # print(actuator_spikes)
 
         new_heading = 0.0
 
@@ -110,6 +110,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
             new_heading += -2*math.pi
         elif new_heading < -math.pi:
             new_heading += 2*math.pi
+        print('NEW OPTIMAL')
         print(self.heading)
 
 

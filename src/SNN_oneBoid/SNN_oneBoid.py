@@ -84,6 +84,7 @@ def updateInput(dt):
     
 def update(dt, physics_conn):
     global boidList, obList, initialised
+
     gameList = obList + boidList
     for i in range(len(gameList)):
         for j in range(i+1, len(gameList)):
@@ -97,10 +98,8 @@ def update(dt, physics_conn):
                 exit()
 
     #receive spikes from network
-
-    print('about to receive actuator spikes')
     navigateBoid(physics_conn.recv())
-    print('received actuator spikes')
+    print('physics receive')
 
     if not (initialised):
         initialised = True
@@ -109,11 +108,11 @@ def update(dt, physics_conn):
         obj.update(dt)
     
     physics_conn.send(updateInput(dt))
-    print('sent updated input')
+    print('physics send')
 
 def RUN_PHYSICS(physics_conn):
     init()
-    pyglet.clock.schedule_interval(update, 0.08, physics_conn)
+    pyglet.clock.schedule_interval(update, 1, physics_conn)
     pyglet.app.run()
 
 if __name__ == '__main__':

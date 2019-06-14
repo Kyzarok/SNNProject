@@ -6,8 +6,8 @@ def RUN_NET(network_conn):
 
     # Parameters
 
-    duration = 10 * 1000 * ms
-    dt = 80*ms
+    duration = 100 * 1000 * ms
+    dt = 1500 * ms
     mod_val = dt
     step = 0.1*ms
     deltaI = .7*ms  # inhibitory delay
@@ -60,26 +60,32 @@ def RUN_NET(network_conn):
     synapses_EXCITE.connect(j='i')
 
     actuator_spikes = SpikeMonitor(actuators, name='actuator_spikes')
-    spike_data = actuator_spikes.count
 
-    @network_operation(dt=dt)
-    def change_I():
-        #send spikes to physics
-        spikes = spike_data[:]
-        print('spikes:')
-        print(spikes)
-        network_conn.send(spikes)
-        # actuator_spikes = NEEDS TO BECOME )
-        I_avoid, I_attract = network_conn.recv()
-        print('BOOP')
-        i_arr_neg = I_avoid
-        i_arr_pos = I_attract
+    def create_change_I(spike_data, i_arr_n, i_arr_p):
+        @network_operation(dt=dt)
+        def change_I():
+            #send spikes to physics
+            spikes = spike_data[:]
+            print('spikes:')
+            print(spikes)
+            network_conn.send(spikes)
+            print('network send')
+            # actuator_spikes = NEEDS TO BECOME 0
+            I_avoid, I_attract = network_conn.recv()
+            print('network receive')
+            i_arr_n = I_avoid
+            i_arr_p = I_attract
+        return change_I
+    
+    change_I = create_change_I(actuator_spikes.count, i_arr_neg, i_arr_pos)
 
-    print('here')
+
+
+    print('BEGIN NEURAL NETWORK')
     run(duration)
-    print('run err')
+    # print('run err')
 
-    print("negative_sensors.count: ")
-    print(neg_spikes_sensors.count)
-    print("positive_sensors.count: ")
-    print(pos_spikes_sensors.count)
+    # print("negative_sensors.count: ")
+    # print(neg_spikes_sensors.count)
+    # print("positive_sensors.count: ")
+    # print(pos_spikes_sensors.count)
