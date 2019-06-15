@@ -139,7 +139,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
             normalised = [x/total for x in new_spikes]
             for j in range(len(normalised)):
                 if j != 5 :
-                    normalised[j] *= 0.7
+                    normalised[j] *= 0.5
 
             for i in range(len(normalised)):
                 orientation = (-5*math.pi/6) + (i*math.pi/6)
@@ -156,10 +156,11 @@ class Boid(phy.Physical):#, Leaky.boid_net):
             print(self.heading)
 
 
-    def wall_sensor_input(self, dt, angle, weight):
+    def wall_sensor_input(self, dt, angle, weight, typeList):
         time = arange(int(dt / (0.1*ms)) + 1) * (0.1*ms)
 
-        weight_bound = (1/(100**2)) * 2.5
+        w_weight_bound = (1/(100**2)) * 2.5
+        b_weight_bound = (1/50**2) * 2
         A_weight = [0.0] * 11
         frequency = [1.0] * 11
 
@@ -174,6 +175,11 @@ class Boid(phy.Physical):#, Leaky.boid_net):
                     current_sensor_orientation += 2*math.pi
 
                 if current_sensor_orientation <= angle[a] < current_sensor_orientation + math.pi/6:
+                    weight_bound = 0
+                    if typeList[a] == 'b':
+                        weight_bound = b_weight_bound
+                    else:
+                        weight_bound = w_weight_bound
                     
                     A_weight[i] += (weight[a]/weight_bound)
                     A_weight[i+1] += (weight[a]/weight_bound)
@@ -222,3 +228,23 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         # print('IN BOID')
         # print(frequency)
         return I_values
+
+    def angleFromBoidToBoid(self, boid_x, boid_y):
+        #correct for heading, so +- pi
+        diff_x, diff_y = 0.0, 0.0
+
+        if boid_y > self.y + self.image.height/2*self.scale:
+            diff_y = boid_y - (self.y + self.image.height/2*self.scale)
+
+        elif boid_y < self.y - self.image.height/2*self.scale:
+            diff_y = boid_y - (self.y - self.image.height/2*self.scale)
+
+        if boid_x < self.x - self.image.width/2*self.scale:
+            diff_x = boid_x - (self.x - self.image.width/2*self.scale)
+
+        elif boid_x > self.x + self.image.width/2*self.scale:
+            diff_x = boid_x - (self.x + self.image.width/2*self.scale)
+
+        diffAngle = math.atan2(diff_y, diff_x)
+
+        return diffAngle

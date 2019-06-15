@@ -67,9 +67,9 @@ def navigateBoid(physics_conn):
             actuator_spikes_literal = physics_conn[index].recv()
             brain_index = str(actuator_spikes_literal)[-1:]
             print('physics receive')
-            print('what it thinks it got:')
+            print('Physics for :')
             print(index)
-            print('what it actually got:')
+            print('received index:')
             print(brain_index)
             burd.num_response(actuator_spikes_literal)
             index += 1
@@ -83,6 +83,7 @@ def updateInput(dt, physics_conn):
         b_x, b_y = burd.getPos()
         angleList = []
         weightList = []
+        typeList = []
         for ob in obList:
             boidToSquare = ob.shortestDistance(b_x, b_y)
             angleToSquare = ob.angleFromBoidToObject(b_x, b_y)
@@ -90,8 +91,21 @@ def updateInput(dt, physics_conn):
                 weight = 1/((boidToSquare)**2)
                 weightList.append(weight)
                 angleList.append(angleToSquare)
+                typeList.append('w')
+
+        for otherBurds in boidList:
+            if burd != otherBurds:
+                b_x, b_y = otherBurds.getPos()
+                boidToBoid = burd.shortestDistance(b_x, b_y)
+                angleToBoid = burd.angleFromBoidToBoid(b_x, b_y)
+                if boidToBoid < 100:
+                    weight = 1/((boidToBoid ** 2))
+                    weightList.append(weight)
+                    angleList.append(angleToBoid)
+                    typeList.append('b')
+
         op = burd.getOptimalHeading()
-        I_avoid = burd.wall_sensor_input(dt, angleList, weightList)
+        I_avoid = burd.wall_sensor_input(dt, angleList, weightList, typeList)
         I_attract = burd.optimal_sensor_input(dt, op)
         physics_conn[index].send([I_avoid, I_attract, index])
         print('physics send')
@@ -125,7 +139,7 @@ def update(dt, physics_conn):
 
 def RUN_PHYSICS(physics_conn):
     init()
-    pyglet.clock.schedule_interval(update, 0.07, physics_conn)
+    pyglet.clock.schedule_interval(update, 0.08, physics_conn)
     pyglet.app.run()
 
 def RUN_NET(network_conn, brain_index):
@@ -196,9 +210,9 @@ def RUN_NET(network_conn, brain_index):
         print('network send')
         I_avoid, I_attract, index = network_conn.recv()
         print('network receive')
-        print('what it think it got:')
+        print('Network Number:')
         print(brain_index)
-        print('what it actually got:')
+        print('received index:')
         print(index)
         I_neg.values[:] = I_avoid
         I_pos.values[:] = I_attract
