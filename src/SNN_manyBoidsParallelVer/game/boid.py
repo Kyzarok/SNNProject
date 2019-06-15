@@ -15,7 +15,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         self.rotation = -math.degrees(self.heading) #maybe replace the maths for heading later in degrees
         self.target_x = 1100
         self.target_y = 100
-        self.resV = 30.0
+        self.resV = 60.0
         self.velocity_x = self.resV * math.cos(self.heading)
         self.velocity_y = self.resV * math.sin(self.heading)
         self.old_spikes = [0] * 11

@@ -42,16 +42,20 @@ def init():
     b_x = X_START 
     b_y = Y_START
     maverick = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
-    maverick.name('maverick')
-    goose = boid.Boid(x=b_x+50, y=b_y-50, batch=drawBatch)
-    goose.name('goose')
+    # maverick.name('maverick')
+    goose = boid.Boid(x=b_x, y=b_y-50, batch=drawBatch)
+    # goose.name('goose')
+    mehve = boid.Boid(x=b_x, y=b_y-100, batch=drawBatch)
+    red_five = boid.Boid(x=b_x+50, y=b_y, batch=drawBatch)
+    serenity = boid.Boid(x=b_x+50, y=b_y-50, batch=drawBatch)
+    nirvash = boid.Boid(x=b_x+50, y=b_y-100, batch=drawBatch)
     #init obstacles
     square_1 = physicalWall.Square(x=OB_1_X, y=OB_1_Y, batch=drawBatch)
     square_1.setScale(OB_1_SCALE)
     square_2 = physicalWall.Square(x=OB_2_X, y=OB_2_Y, batch=drawBatch)
     square_2.setScale(OB_2_SCALE)
     obList = [square_1, square_2]
-    boidList = [maverick, goose]
+    boidList = [maverick, goose, mehve, red_five, serenity, nirvash]
 
 @gameWindow.event
 def on_draw():
@@ -224,20 +228,32 @@ def RUN_NET(network_conn, brain_index):
 
 if __name__ == '__main__':
     mp.set_start_method('spawn')
+    network_conn_0, physics_conn_0 = mp.Pipe()
     network_conn_1, physics_conn_1 = mp.Pipe()
     network_conn_2, physics_conn_2 = mp.Pipe()
-    physics_conn = [physics_conn_1, physics_conn_2]
-    network_conn = [network_conn_1, network_conn_2]
+    network_conn_3, physics_conn_3 = mp.Pipe()
+    network_conn_4, physics_conn_4 = mp.Pipe()
+    network_conn_5, physics_conn_5 = mp.Pipe()
+    physics_conn = [physics_conn_0, physics_conn_1, physics_conn_2, physics_conn_3, physics_conn_4, physics_conn_5]
+    network_conn = [network_conn_0, network_conn_1, network_conn_2, network_conn_3, network_conn_4, network_conn_5]
     print('SETTING PHYSICS')
     #dummy send for first iteration
     for n in network_conn:
         n.send(None)
-    p_1 = mp.Process(target=RUN_PHYSICS, args=(physics_conn,))
+    p_core = mp.Process(target=RUN_PHYSICS, args=(physics_conn,))
     print('SETTING NETWORK')
-    p_2 = mp.Process(target=RUN_NET, args=(network_conn_1, '0', ))
-    p_3 = mp.Process(target=RUN_NET, args=(network_conn_2, '1', ))
+    p_0 = mp.Process(target=RUN_NET, args=(network_conn_0, '0', ))
+    p_1 = mp.Process(target=RUN_NET, args=(network_conn_1, '1', ))
+    p_2 = mp.Process(target=RUN_NET, args=(network_conn_2, '2', ))
+    p_3 = mp.Process(target=RUN_NET, args=(network_conn_3, '3', ))
+    p_4 = mp.Process(target=RUN_NET, args=(network_conn_4, '4', ))
+    p_5 = mp.Process(target=RUN_NET, args=(network_conn_5, '5', ))
     print('STARTING PHYSICS')
-    p_1.start()
+    p_core.start()
     print('STARTING NETWORKS')
+    p_0.start()
+    p_1.start()
     p_2.start()
     p_3.start()
+    p_4.start()
+    p_5.start()
