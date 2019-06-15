@@ -100,13 +100,12 @@ def update(dt, physics_conn):
     #receive spikes from network
     new_spikes = physics_conn.recv()
     print('physics receive')
-    #print(new_spikes)
 
     navigateBoid(new_spikes)
 
     initialised = True
 
-    dt = 1
+    dt = 0.1
 
     for obj in gameList:
         obj.update(dt)
@@ -118,15 +117,14 @@ def update(dt, physics_conn):
 
 def RUN_PHYSICS(physics_conn):
     init()
-    pyglet.clock.schedule_interval(update, 1.1, physics_conn)
+    pyglet.clock.schedule_interval(update, 0.1, physics_conn)
     pyglet.app.run()
 
 def RUN_NET(network_conn):
     start_scope()
 
     # Parameters
-    
-    dt = 1000 * ms
+    dt = 100 * ms
     modval = dt
     my_default = 0.1 * ms
     deltaI = .7*ms  # inhibitory delay
@@ -184,15 +182,15 @@ def RUN_NET(network_conn):
 
     @network_operation(dt=dt)
     def change_I():
-        global old_spikes
-        print("neg_spike_sensors: ")
-        print(neg_spikes_sensors.count)
-        print("pos_spike_sensors: ")
-        print(pos_spikes_sensors.count)
-        print('actuator_spikes.count: ')
-        print(actuator_spikes.count)
+        # print("neg_spike_sensors: ")
+        # print(neg_spikes_sensors.count)
+        # print("pos_spike_sensors: ")
+        # print(pos_spikes_sensors.count)
+        # print('actuator_spikes.count: ')
+        # print(actuator_spikes.count)
         new_spikes = str(actuator_spikes.count)
         network_conn.send(new_spikes)
+        print('network send')
         I_avoid, I_attract = network_conn.recv()
         print('network receive')
         I_neg.values[:] = I_avoid
@@ -200,7 +198,7 @@ def RUN_NET(network_conn):
 
 
     print('BEGIN NEURAL NETWORK')
-    run(100*dt)
+    run(1000000000*dt)
     print('SNN STOPPED')
 
 if __name__ == '__main__':

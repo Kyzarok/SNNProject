@@ -106,7 +106,6 @@ class Boid(phy.Physical):#, Leaky.boid_net):
             if index:
                 actuator_spikes.append(int(res[:index]))
                 res = res[index + 1:]
-
         actuator_spikes.append(int(res))
 
         new_spikes = actuator_spikes[:]
@@ -116,22 +115,33 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         
         self.old_spikes = actuator_spikes[:]
 
-        new_heading = 0.0
+        print('new_spikes: ')
+        print(new_spikes)
+
+        print('CURRENT HEADING')
+        print(self.heading)
+
+        new_heading = self.heading
 
         total = sum(new_spikes)
         if total == 0:
             total = 1
         normalised = [x/total for x in new_spikes]
+        # for k in range(len(normalised)):
+        #     if normalised[k] == 0:
+        #         normalised[k] = 10
 
         for i in range(len(normalised)):
-            new_heading += normalised[i] * ((-5*math.pi/6) + (i*math.pi/6))
-
-        self.heading += new_heading
+            orientation = (-5*math.pi/6) + (i*math.pi/6)
+            new_heading += normalised[i] * orientation
 
         if new_heading > math.pi:
             new_heading += -2*math.pi
         elif new_heading < -math.pi:
             new_heading += 2*math.pi
+
+        self.heading = new_heading
+
         print('NEW HEADING')
         print(self.heading)
 
@@ -139,7 +149,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
     def wall_sensor_input(self, dt, angle, weight):
         time = arange(int(dt / (0.1*ms)) + 1) * (0.1*ms)
 
-        weight_bound = (1/(100**2)) * 1.5
+        weight_bound = (1/(100**2)) * 2.5
         A_weight = [0.0] * 11
         frequency = [1.0] * 11
 
@@ -169,7 +179,6 @@ class Boid(phy.Physical):#, Leaky.boid_net):
                 new[k] = (A*A_weight[k])*math.cos(2 * math.pi * (frequency[k]) * t)
             I_values.append(new)
         return I_values
-
 
 
     def optimal_sensor_input(self, dt, optimal):
