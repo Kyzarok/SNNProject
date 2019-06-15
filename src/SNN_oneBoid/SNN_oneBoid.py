@@ -2,7 +2,6 @@ import numpy, pyglet, time, random
 from game import physicalObject, physicalWall, boid, resources, load, util
 from brian2 import *
 import multiprocessing as mp
-# from multiprocessing import Process, Pipe
 
 
 #dimensions for window
@@ -142,9 +141,10 @@ def RUN_NET(network_conn):
     i_arr_neg = dummy_arr
     i_arr_pos = dummy_arr
 
-
     I_neg = TimedArray(values=i_arr_neg, dt = my_default, name='I_neg')
     I_pos = TimedArray(values=i_arr_pos, dt = my_default, name='I_pos')
+
+    dt = len(i_arr_pos) * my_default
 
     tau_sensors = my_default
     eqs_avoid = '''
@@ -184,21 +184,19 @@ def RUN_NET(network_conn):
 
     @network_operation(dt=dt)
     def change_I():
+        global old_spikes
         print("neg_spike_sensors: ")
         print(neg_spikes_sensors.count)
         print("pos_spike_sensors: ")
         print(pos_spikes_sensors.count)
         print('actuator_spikes.count: ')
         print(actuator_spikes.count)
-        spikes = str(actuator_spikes.count)
-        network_conn.send(spikes)
-        print('network send')    
+        new_spikes = str(actuator_spikes.count)
+        network_conn.send(new_spikes)
         I_avoid, I_attract = network_conn.recv()
         print('network receive')
-        i_arr_neg[:] = I_avoid
-        i_arr_pos[:] = I_attract
-        I_neg = TimedArray(values=i_arr_neg, dt = my_default, name='I_neg')
-        I_pos = TimedArray(values=i_arr_pos, dt = my_default, name='I_pos')
+        I_neg.values[:] = I_avoid
+        I_pos.values[:] = I_attract
 
 
     print('BEGIN NEURAL NETWORK')

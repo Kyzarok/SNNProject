@@ -18,6 +18,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         self.resV = 30.0
         self.velocity_x = self.resV * math.cos(self.heading)
         self.velocity_y = self.resV * math.sin(self.heading)
+        self.old_spikes = [0] * 11
 
     def update(self, dt):
         super(Boid, self).update(dt)
@@ -97,7 +98,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         l_bracket_position = actuator_spikes_literal.find('[')
         r_bracket_position = actuator_spikes_literal.find(']')
 
-        res = actuator_spikes_literal[l_bracket_position + 1 : r_bracket_position - 1]
+        res = actuator_spikes_literal[l_bracket_position + 1 : r_bracket_position]
 
         actuator_spikes = []
         for i in range(10):
@@ -105,15 +106,22 @@ class Boid(phy.Physical):#, Leaky.boid_net):
             if index:
                 actuator_spikes.append(int(res[:index]))
                 res = res[index + 1:]
-            else:
-                actuator_spikes.append(int(res))
+
+        actuator_spikes.append(int(res))
+
+        new_spikes = actuator_spikes[:]
+
+        for i in range(11):
+            new_spikes[i] -= self.old_spikes[i]
+        
+        self.old_spikes = actuator_spikes[:]
 
         new_heading = 0.0
 
-        total = sum(actuator_spikes)
+        total = sum(new_spikes)
         if total == 0:
             total = 1
-        normalised = [x/total for x in actuator_spikes]
+        normalised = [x/total for x in new_spikes]
 
         for i in range(len(normalised)):
             new_heading += normalised[i] * ((-5*math.pi/6) + (i*math.pi/6))
