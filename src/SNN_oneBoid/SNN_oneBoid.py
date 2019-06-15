@@ -37,6 +37,8 @@ boidList = []
 obList = []
 initialised = False
 
+LOCK = False
+
 def init():
     global boidList, obList
     b_x = X_START 
@@ -96,7 +98,7 @@ def update(dt, physics_conn):
                 print('COLLISION')
                 exit()
 
-
+    
     #receive spikes from network
     new_spikes = physics_conn.recv()
     print('physics receive')
@@ -114,6 +116,7 @@ def update(dt, physics_conn):
     
     physics_conn.send(I_values)
     print('physics send')
+
 
 def RUN_PHYSICS(physics_conn):
     init()
@@ -182,12 +185,6 @@ def RUN_NET(network_conn):
 
     @network_operation(dt=dt)
     def change_I():
-        # print("neg_spike_sensors: ")
-        # print(neg_spikes_sensors.count)
-        # print("pos_spike_sensors: ")
-        # print(pos_spikes_sensors.count)
-        # print('actuator_spikes.count: ')
-        # print(actuator_spikes.count)
         new_spikes = str(actuator_spikes.count)
         network_conn.send(new_spikes)
         print('network send')
@@ -197,8 +194,9 @@ def RUN_NET(network_conn):
         I_pos.values[:] = I_attract
 
 
+
     print('BEGIN NEURAL NETWORK')
-    run(1000000000*dt)
+    run(1000000*dt)
     print('SNN STOPPED')
 
 if __name__ == '__main__':

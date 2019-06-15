@@ -127,9 +127,9 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         if total == 0:
             total = 1
         normalised = [x/total for x in new_spikes]
-        # for k in range(len(normalised)):
-        #     if normalised[k] == 0:
-        #         normalised[k] = 10
+        for j in range(len(normalised)):
+            if j != 5 :
+                normalised[j] *= 0.7
 
         for i in range(len(normalised)):
             orientation = (-5*math.pi/6) + (i*math.pi/6)
