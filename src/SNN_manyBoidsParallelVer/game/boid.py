@@ -19,6 +19,10 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         self.velocity_x = self.resV * math.cos(self.heading)
         self.velocity_y = self.resV * math.sin(self.heading)
         self.old_spikes = [0] * 11
+        self.TAG = 'dummy'
+
+    def name(self, name):
+        self.TAG = name
 
     def update(self, dt):
         super(Boid, self).update(dt)
@@ -95,6 +99,7 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         return self.scale
 
     def num_response(self, actuator_spikes_literal):
+        # print(self.TAG)
 
         if(actuator_spikes_literal == None):
             print('NoneType Error')

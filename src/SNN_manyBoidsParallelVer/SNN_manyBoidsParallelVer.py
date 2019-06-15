@@ -37,14 +37,14 @@ boidList = []
 obList = []
 initialised = False
 
-LOCK = False
-
 def init():
     global boidList, obList
     b_x = X_START 
     b_y = Y_START
     maverick = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
+    maverick.name('maverick')
     goose = boid.Boid(x=b_x+50, y=b_y-50, batch=drawBatch)
+    goose.name('goose')
     #init obstacles
     square_1 = physicalWall.Square(x=OB_1_X, y=OB_1_Y, batch=drawBatch)
     square_1.setScale(OB_1_SCALE)
@@ -65,7 +65,12 @@ def navigateBoid(physics_conn):
         for burd in boidList:
             #receive spikes from network
             actuator_spikes_literal = physics_conn[index].recv()
+            brain_index = str(actuator_spikes_literal)[-1:]
             print('physics receive')
+            print('what it thinks it got:')
+            print(index)
+            print('what it actually got:')
+            print(brain_index)
             burd.num_response(actuator_spikes_literal)
             index += 1
 
@@ -88,11 +93,13 @@ def updateInput(dt, physics_conn):
         op = burd.getOptimalHeading()
         I_avoid = burd.wall_sensor_input(dt, angleList, weightList)
         I_attract = burd.optimal_sensor_input(dt, op)
-        physics_conn[index].send([I_avoid, I_attract])
+        physics_conn[index].send([I_avoid, I_attract, index])
         print('physics send')
+        # print(index)
         index += 1
     
 def update(dt, physics_conn):
+    dt = 0.08
     global boidList, obList, initialised
 
     gameList = obList + boidList
@@ -111,8 +118,6 @@ def update(dt, physics_conn):
 
     initialised = True
 
-    dt = 0.1
-
     for obj in gameList:
         obj.update(dt)
 
@@ -120,14 +125,14 @@ def update(dt, physics_conn):
 
 def RUN_PHYSICS(physics_conn):
     init()
-    pyglet.clock.schedule_interval(update, 0.1, physics_conn)
+    pyglet.clock.schedule_interval(update, 0.07, physics_conn)
     pyglet.app.run()
 
-def RUN_NET(network_conn):
+def RUN_NET(network_conn, brain_index):
     start_scope()
 
     # Parameters
-    dt = 100 * ms
+    dt = 80 * ms
     modval = dt
     my_default = 0.1 * ms
     deltaI = .7*ms  # inhibitory delay
@@ -186,12 +191,18 @@ def RUN_NET(network_conn):
     @network_operation(dt=dt)
     def change_I():
         new_spikes = str(actuator_spikes.count)
+        new_spikes = new_spikes + brain_index
         network_conn.send(new_spikes)
         print('network send')
-        I_avoid, I_attract = network_conn.recv()
+        I_avoid, I_attract, index = network_conn.recv()
         print('network receive')
+        print('what it think it got:')
+        print(brain_index)
+        print('what it actually got:')
+        print(index)
         I_neg.values[:] = I_avoid
         I_pos.values[:] = I_attract
+
 
     print('BEGIN NEURAL NETWORK')
     run(1000000*dt)
@@ -209,8 +220,8 @@ if __name__ == '__main__':
         n.send(None)
     p_1 = mp.Process(target=RUN_PHYSICS, args=(physics_conn,))
     print('SETTING NETWORK')
-    p_2 = mp.Process(target=RUN_NET, args=(network_conn_1,))
-    p_3 = mp.Process(target=RUN_NET, args=(network_conn_2,))
+    p_2 = mp.Process(target=RUN_NET, args=(network_conn_1, '0', ))
+    p_3 = mp.Process(target=RUN_NET, args=(network_conn_2, '1', ))
     print('STARTING PHYSICS')
     p_1.start()
     print('STARTING NETWORKS')
