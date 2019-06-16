@@ -11,7 +11,7 @@ class Boid(phy.Physical):
     def __init__(self, *args, **kwargs):
         super(Boid, self).__init__(img=resources.boidImage, *args, **kwargs)
         self.scale = 0.5
-        self.heading = -math.pi/4 * random.randint(0, 10)/10 #start value
+        self.heading = -math.pi/4# * random.randint(0, 10)/10 #start value
         self.rotation = -math.degrees(self.heading)
         self.target_x = 1100
         self.target_y = 100
@@ -140,21 +140,21 @@ class Boid(phy.Physical):
                 new_heading += 2*math.pi
 
             self.heading = new_heading
-
-            print('NEW HEADING')
+            position = self.getPos()
+            print('BOID AT ' + str(position) + 'HAS NEW HEADING: ')
             print(self.heading)
 
 
-    def wall_sensor_input(self, dt, angle, weight, typeList):
+    def avoid_sensor_input(self, dt, angle, weight, typeList):
         time = arange(int(dt / (0.1*ms)) + 1) * (0.1*ms)
 
-        w_weight_bound = (1/(100**2)) * 2.5
-        b_weight_bound = (1/50**2) * 2
+        w_weight_bound = (1/(150**2)) *2
+        b_weight_bound = (1/100**2) * 2.5
         A_weight = [0.0] * 11
         frequency = [1.0] * 11
 
         for a in range(len(angle)): #go through the list of obstacles
-            for i in range(10): #go through each sensor
+            for i in range(10): #go through each sensor gap
                 current_sensor_orientation = -5*math.pi/6 + i*math.pi/6 + self.heading
                 diff = (-5*math.pi/6 + (i+1)*math.pi/6 + self.heading) - angle[a]
 
@@ -192,7 +192,7 @@ class Boid(phy.Physical):
         A_weight = [0.0] * 11
         frequency = [0.0] * 11
 
-        for i in range(10): #go through each sensor
+        for i in range(10): #go through each sensor gap
             current_sensor_orientation = -5*math.pi/6 + i*math.pi/6 + self.heading
             diff = (-5*math.pi/6 + (i+1)*math.pi/6 + self.heading) - optimal
 

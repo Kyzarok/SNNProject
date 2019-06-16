@@ -64,7 +64,6 @@ def navigateBoid(physics_conn):
         for burd in boidList:
             #receive spikes from network
             actuator_spikes_literal = physics_conn[index].recv()
-            brain_index = str(actuator_spikes_literal)[-1:]
             print('physics receive')
             burd.num_response(actuator_spikes_literal)
             index += 1
@@ -100,7 +99,7 @@ def updateInput(dt, physics_conn):
                     typeList.append('b')
 
         op = burd.getOptimalHeading()
-        I_avoid = burd.wall_sensor_input(dt, angleList, weightList, typeList)
+        I_avoid = burd.avoid_sensor_input(dt, angleList, weightList, typeList)
         I_attract = burd.optimal_sensor_input(dt, op)
         physics_conn[index].send([I_avoid, I_attract, index])
         print('physics send')
