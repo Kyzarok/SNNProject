@@ -13,16 +13,6 @@ class Physical(pyglet.sprite.Sprite):
 
     def update(self, dt):
         pass
-
-    # def checkBounds(self):
-    #     min_x = -self.image.width / 2
-    #     min_y = -self.image.height / 2
-    #     max_x = self.image.width / 2
-    #     max_y = self.image.height / 2
-    #     if self.x >= max_x or self.x <= min_x or self.y >= max_y or self.y <= min_y:
-    #         raise Exception('Out of bounds')
-    #         exit()
-
             
     def collidesWith(self, otherObject):
         #Determine if this object collides with another

@@ -37,8 +37,6 @@ drawBatch = pyglet.graphics.Batch()
 
 titleLabel = pyglet.text.Label(text='Multiple Boids Maze Navigation', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
 goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch=drawBatch)
-#mLabel = pyglet.text.Label(text='Maverick', x=X_START, y=Y_START, batch=drawBatch)
-#gLabel = pyglet.text.Label(text='Goose', x=X_START + 50, y=Y_START - 50, batch=drawBatch)
 
 obstacles=None
 boidList = []
@@ -72,14 +70,8 @@ def init():
     square_1.setScale(OB_1_SCALE)
     square_2 = physicalWall.Square(x=OB_2_X, y=OB_2_Y, batch=drawBatch)
     square_2.setScale(OB_2_SCALE)
-    
-    #listed this way as later there will be a list of boids and it will be easier if we knew the index of the obstacles
-    #or maybe I should just make two game object lists........ that's not a bad idea, could test boids on their own
-    #yeah I'll do that - musings@19:06 30/05/2019
-    obList = [square_1, square_2]
-    # boidList = [nimbus, serenity, nirvash, blue_beetle, red_five, mehve]
 
-    #no event handlers necessary as no keyboard or mouse input
+    obList = [square_1, square_2]
 
 @gameWindow.event
 def on_draw():
@@ -94,17 +86,10 @@ def normalise(W_OP, W_OB_B):
 
 def navigateBoids():
     global boidList, obList
-    #so this function's job is to correctly orientate the heading of the boid
-    #the core equation needs to account for other obstacles as well as opitmal heading
-    
-    #nearestBoidHeading = 0
-
-    #the boids will only take the effort to avoid the boid nearest to it
-    
     for burd in boidList:
         #weights for further calibration
         WEIGHT_OPTIMAL = 0.001
-        WEIGHT_OBSTACLE_BOID = [0.0] * (len(obList) + len(boidList)) #this will use the inverse
+        WEIGHT_OBSTACLE_BOID = [0.0] * (len(obList) + len(boidList))
         offset_x = [0.0] * (len(obList) + len(boidList))
         offset_y = [0.0] * (len(obList) + len(boidList))
         index = 0
@@ -123,10 +108,8 @@ def navigateBoids():
 
         for otherBurds in boidList:
             if burd != otherBurds:
-                #print('avoiding')
                 b_x, b_y = otherBurds.getPos()
                 boidToBoid = burd.shortestDistance(b_x, b_y)
-                #print('distance between boids: ' + str(boidToBoid))
                 if boidToBoid < 100*otherBurds.getScale():
                     offset_x[index], offset_y[index] = burd.offsetVelocities(b_x, b_y)
                     WEIGHT_OBSTACLE_BOID[index] = 1/((1.25*boidToBoid) ** 2)
@@ -135,7 +118,6 @@ def navigateBoids():
                     offset_x[index], offset_y[index] = 0.0, 0.0
                     WEIGHT_OBSTACLE_BOID[index] = 0.0
                 index += 1
-                #print('value of index: ' + str(index))
             else:
                 #do not take self into account
                 offset_x[index], offset_y[index] = 0.0, 0.0
@@ -143,7 +125,6 @@ def navigateBoids():
                 index+=1
 
         WEIGHT_OPTIMAL, WEIGHT_OBSTACLE_BOID = normalise(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE_BOID)
-        print('weights(OP, OB, B): ' + str(WEIGHT_OPTIMAL) + '   ' + str(WEIGHT_OBSTACLE_BOID))
 
         burd.setToOptimalHeading()
         burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE_BOID, offset_x, offset_y)

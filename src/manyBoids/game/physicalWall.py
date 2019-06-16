@@ -12,8 +12,6 @@ class Square(phy.Physical):
         super(Square, self).update(dt)
         
     def shortestDistance(self, boid_x, boid_y):
-        #circle around point, will need to do this for each point around the actual surface
-        #calculate distance of point from each wall, find shortest one
         shortestDistance = 0.0
         # | a1 | a2 | a3 |
         # | b1 | NA | b3 |
