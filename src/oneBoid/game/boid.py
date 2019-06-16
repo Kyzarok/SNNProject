@@ -29,7 +29,6 @@ class Boid(phy.Physical):
         v_y = (OP_weight * self.velocity_y) + offsetTotal_y
 
         newAngle = math.atan2(v_y, v_x)
-        print('new angle: ' +str(newAngle))
         if 0 <= newAngle:
             self.rotation = 360 - math.degrees(newAngle)
         else:

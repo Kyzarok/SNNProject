@@ -38,7 +38,6 @@ class Boid(phy.Physical):
         self.velocity_y = self.resV * math.sin(newAngle)
 
     def update(self, dt):
-        #mathematically correct update function
         super(Boid, self).update(dt)
         self.x += self.velocity_x * dt
         self.y += self.velocity_y * dt
