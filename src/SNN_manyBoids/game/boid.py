@@ -8,7 +8,7 @@ class Boid(phy.Physical):
     def __init__(self, *args, **kwargs):
         super(Boid, self).__init__(img=resources.boidImage, *args, **kwargs)
         self.scale = 0.5
-        self.heading = -math.pi/4 * random.randint(0, 10)/10#start value
+        self.heading = -math.pi/4# * random.randint(0, 10)/10#start value
         self.rotation = -math.degrees(self.heading)
         self.target_x = 1100
         self.target_y = 100
