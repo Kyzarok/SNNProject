@@ -8,8 +8,8 @@ class Boid(phy.Physical):
     def __init__(self, *args, **kwargs): #x_start, y_start, x_target, y_target
         super(Boid, self).__init__(img=resources.boidImage, *args, **kwargs)
         self.scale = 0.5
-        self.heading = -math.pi/2 * random.randint(0, 10)/10#start value, is in radians and works of off same right aiming heading as trig funcs
-        self.rotation = -math.degrees(self.heading) #maybe replace the maths for heading later in degrees
+        self.heading = -math.pi/2 * random.randint(0, 10)/10#start value
+        self.rotation = -math.degrees(self.heading)
         self.target_x = 1100
         self.target_y = 100
         self.resV = 30.0
@@ -39,22 +39,15 @@ class Boid(phy.Physical):
         self.velocity_y = self.resV * math.sin(newAngle)
 
     def update(self, dt):
-        #mathematically correct update function
         super(Boid, self).update(dt)
-        #in the asteroid example, on an arrow key press the boid would rotate
-        #here, the rotation angle will depend on the weightings
         self.x += self.velocity_x * dt
         self.y += self.velocity_y * dt
-        
-        #here will be where we update the velocity
-        #heading correction has already occured
 
     def setToOptimalHeading(self):
         #optimal orientation: 
         diff_x = self.x - self.target_x
         diff_y = self.y - self.target_y 
         angleToDest = math.atan2(diff_y,diff_x)
-        #print('angleToDest: ' + str(angleToDest))
 
         #top
         if 0 <= angleToDest:
@@ -65,7 +58,6 @@ class Boid(phy.Physical):
 
         self.velocity_x = self.resV * math.cos(bestHeading)
         self.velocity_y = self.resV * math.sin(bestHeading)
-        print('best heading is: ' + str(bestHeading))
 
     def getPos(self):
         return self.position
