@@ -11,8 +11,6 @@ Y_START = 800
 X_GOAL = 1100
 Y_GOAL = 100
 
-BOID_NUMBER = 6
-
 #coords and dimensions for rectangular obstacle
 OB_1_X = 400 #random.randint(400, 1000)
 OB_1_Y = 600 #random.randint(200, 700)
