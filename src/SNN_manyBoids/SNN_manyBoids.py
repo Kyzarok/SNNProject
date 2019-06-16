@@ -37,37 +37,18 @@ obList = []
 
 def init():
     global boidList, obList
-    BOID_NUMBER = 2
-    #I have no idea why input isn't working, something about not being able to call the module
-    print(str(BOID_NUMBER))
-    
-    #init boids
-    i = 0
-    while (i < BOID_NUMBER):
-        b_x = ran.randint(X_START - 50, X_START + 50)
-        b_y = ran.randint(Y_START - 50, Y_START + 50)
-        new_boid = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
-        append = True
-        for burd in boidList:
-            if util.distance(new_boid.getPos(), burd.getPos()) < 30:
-                append = False
-        if append:
-            boidList.append(new_boid)
-        else:
-            i-=1
-        i+=1
 
-    # b_x = X_START 
-    # b_y = Y_START
-    # maverick = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
-    # goose = boid.Boid(x=b_x + 50, y=b_y, batch = drawBatch)
+    b_x = X_START 
+    b_y = Y_START
+    maverick = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
+    goose = boid.Boid(x=b_x + 50, y=b_y, batch = drawBatch)
     #init obstacles
     square_1 = physicalWall.Square(x=OB_1_X, y=OB_1_Y, batch=drawBatch)
     square_1.setScale(OB_1_SCALE)
     square_2 = physicalWall.Square(x=OB_2_X, y=OB_2_Y, batch=drawBatch)
     square_2.setScale(OB_2_SCALE)
     obList = [square_1, square_2]
-    # boidList = [maverick, goose]
+    boidList = [maverick, goose]
 
 @gameWindow.event
 def on_draw():
