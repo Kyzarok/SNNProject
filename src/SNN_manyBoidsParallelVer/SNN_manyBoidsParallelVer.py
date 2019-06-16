@@ -25,12 +25,9 @@ OB_2_SCALE = 0.5
 #define window height and width
 gameWindow = pyglet.window.Window(width=WIDTH, height=HEIGHT)
 
-#this can easily not be a global dude fix it
-boidStillFlying = True
-
 drawBatch = pyglet.graphics.Batch()
 
-titleLabel = pyglet.text.Label(text='SNN Single Boid Maze Navigation', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
+titleLabel = pyglet.text.Label(text='SNN Multiple Boids Maze Navigation', x=WIDTH/2 -100, y=HEIGHT-50, batch=drawBatch)
 goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch=drawBatch)
 
 boidList = []
@@ -42,9 +39,7 @@ def init():
     b_x = X_START 
     b_y = Y_START
     maverick = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
-    # maverick.name('maverick')
     goose = boid.Boid(x=b_x, y=b_y-50, batch=drawBatch)
-    # goose.name('goose')
     mehve = boid.Boid(x=b_x, y=b_y-100, batch=drawBatch)
     red_five = boid.Boid(x=b_x+50, y=b_y, batch=drawBatch)
     serenity = boid.Boid(x=b_x+50, y=b_y-50, batch=drawBatch)
@@ -71,10 +66,6 @@ def navigateBoid(physics_conn):
             actuator_spikes_literal = physics_conn[index].recv()
             brain_index = str(actuator_spikes_literal)[-1:]
             print('physics receive')
-            print('Physics for :')
-            print(index)
-            print('received index:')
-            print(brain_index)
             burd.num_response(actuator_spikes_literal)
             index += 1
 
@@ -113,7 +104,6 @@ def updateInput(dt, physics_conn):
         I_attract = burd.optimal_sensor_input(dt, op)
         physics_conn[index].send([I_avoid, I_attract, index])
         print('physics send')
-        # print(index)
         index += 1
     
 def update(dt, physics_conn):
@@ -170,6 +160,8 @@ def RUN_NET(network_conn, brain_index):
 
     dt = len(i_arr_pos) * my_default
 
+    
+    #Sensor Neurons
     tau_sensors = my_default
     eqs_avoid = '''
     dv/dt = (I_neg(t%modval, i) - v)/tau_sensors : 1
@@ -183,7 +175,8 @@ def RUN_NET(network_conn, brain_index):
     positive_sensors = NeuronGroup(11, model=eqs_attract, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler', name='positive_sensors')
     pos_spikes_sensors = SpikeMonitor(positive_sensors, name='pos_spikes_sensors')
 
-    # Command neurons
+
+    # Actuator neurons
     tau = 1 * ms
     taus = 1.001 * ms
     wex = 5
@@ -214,10 +207,6 @@ def RUN_NET(network_conn, brain_index):
         print('network send')
         I_avoid, I_attract, index = network_conn.recv()
         print('network receive')
-        print('Network Number:')
-        print(brain_index)
-        print('received index:')
-        print(index)
         I_neg.values[:] = I_avoid
         I_pos.values[:] = I_attract
 
@@ -236,11 +225,13 @@ if __name__ == '__main__':
     network_conn_5, physics_conn_5 = mp.Pipe()
     physics_conn = [physics_conn_0, physics_conn_1, physics_conn_2, physics_conn_3, physics_conn_4, physics_conn_5]
     network_conn = [network_conn_0, network_conn_1, network_conn_2, network_conn_3, network_conn_4, network_conn_5]
+
     print('SETTING PHYSICS')
     #dummy send for first iteration
     for n in network_conn:
         n.send(None)
     p_core = mp.Process(target=RUN_PHYSICS, args=(physics_conn,))
+
     print('SETTING NETWORK')
     p_0 = mp.Process(target=RUN_NET, args=(network_conn_0, '0', ))
     p_1 = mp.Process(target=RUN_NET, args=(network_conn_1, '1', ))
@@ -248,8 +239,10 @@ if __name__ == '__main__':
     p_3 = mp.Process(target=RUN_NET, args=(network_conn_3, '3', ))
     p_4 = mp.Process(target=RUN_NET, args=(network_conn_4, '4', ))
     p_5 = mp.Process(target=RUN_NET, args=(network_conn_5, '5', ))
+    
     print('STARTING PHYSICS')
     p_core.start()
+
     print('STARTING NETWORKS')
     p_0.start()
     p_1.start()
