@@ -11,8 +11,8 @@ class Boid(phy.Physical):#, Leaky.boid_net):
     def __init__(self, *args, **kwargs): #x_start, y_start, x_target, y_target
         super(Boid, self).__init__(img=resources.boidImage, *args, **kwargs)
         self.scale = 0.5
-        self.heading = -math.pi/4 #* random.randint(0, 10)/10#start value, is in radians and works of off same right aiming heading as trig funcs
-        self.rotation = -math.degrees(self.heading) #maybe replace the maths for heading later in degrees
+        self.heading = -math.pi/4 * random.randint(0, 10)/10 #start value
+        self.rotation = -math.degrees(self.heading)
         self.target_x = 1100
         self.target_y = 100
         self.resV = 30.0
@@ -25,14 +25,12 @@ class Boid(phy.Physical):#, Leaky.boid_net):
 
         self.velocity_x = self.resV * math.cos(self.heading)
         self.velocity_y = self.resV * math.sin(self.heading)
-        #print('new angle: ' +str(newAngle))
         if self.heading >= 0:
             self.rotation = 360 - math.degrees(self.heading)
         else:
             self.rotation = -math.degrees(self.heading)
         self.x += self.velocity_x * dt
         self.y += self.velocity_y * dt
-        # print("new_coords: " + str(self.x) + ' ' + str(self.y))
 
     def getPos(self):
         return self.position
@@ -115,11 +113,8 @@ class Boid(phy.Physical):#, Leaky.boid_net):
         
         self.old_spikes = actuator_spikes[:]
 
-        print('new_spikes: ')
+        print('Spikes of sensors from most negative (-150 degrees) to most positive (+150 degrees) with the front of the boid being 0 degrees: ')
         print(new_spikes)
-
-        print('CURRENT HEADING')
-        print(self.heading)
 
         new_heading = self.heading
 
@@ -209,6 +204,4 @@ class Boid(phy.Physical):#, Leaky.boid_net):
             for k in range(len(frequency)):
                 new[k] = (A_weight[k])*math.cos(2 * math.pi * (frequency[k]) * t)
             I_values.append(new)
-        # print('IN BOID')
-        # print(frequency)
         return I_values
