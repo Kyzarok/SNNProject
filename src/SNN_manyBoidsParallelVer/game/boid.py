@@ -13,12 +13,18 @@ class Boid(phy.Physical):
         self.scale = 0.5
         self.heading = -math.pi/4# * random.randint(0, 10)/10 #start value
         self.rotation = -math.degrees(self.heading)
-        self.target_x = 1100
-        self.target_y = 100
+        self.target_x = 0
+        self.target_y = 0
         self.resV = 30.0
         self.velocity_x = self.resV * math.cos(self.heading)
         self.velocity_y = self.resV * math.sin(self.heading)
         self.old_spikes = [0] * 11
+        self.coord_record = [[self.x, self.y]]
+        self.spike_record = []
+
+    def setTarget(self, x, y):
+        self.target_x = x
+        self.target_y = y
 
     def update(self, dt):
         super(Boid, self).update(dt)
@@ -31,6 +37,7 @@ class Boid(phy.Physical):
             self.rotation = -math.degrees(self.heading)
         self.x += self.velocity_x * dt
         self.y += self.velocity_y * dt
+        self.coord_record.append([self.x, self.y])
 
     def getPos(self):
         return self.position
@@ -114,6 +121,7 @@ class Boid(phy.Physical):
 
             for i in range(11):
                 new_spikes[i] -= self.old_spikes[i]
+            self.spike_record.append(new_spikes)
             
             self.old_spikes = actuator_spikes[:]
 
@@ -152,7 +160,7 @@ class Boid(phy.Physical):
 
             self.heading = new_heading
             position = self.getPos()
-            print('BOID AT ' + str(position) + 'HAS NEW HEADING: ')
+            print('BOID AT ' + str(position) + ' HAS NEW HEADING: ')
             print(self.heading)
 
 
@@ -160,7 +168,6 @@ class Boid(phy.Physical):
         time = arange(int(dt / (1.0*ms)) + 1) * (1.0*ms)
 
         weight_factor = 10**4 * 0.5
-        print(weight)
         A_weight = [0] * 11
         frequency = [1.0] * 11
 
@@ -247,3 +254,9 @@ class Boid(phy.Physical):
         diffAngle = math.atan2(diff_y, diff_x)
 
         return diffAngle
+
+    def record(self, file_index):
+        save_spikes = 'spikes_' + file_index
+        save_coords = 'coords_' + file_index
+        numpy.savetxt(save_spikes, self.spike_record, delimiter=' ', newline='\\')
+        numpy.savetxt(save_coords, self.coord_record, delimiter=' ', newline='\\')

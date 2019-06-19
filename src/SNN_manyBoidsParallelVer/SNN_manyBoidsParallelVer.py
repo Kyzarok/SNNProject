@@ -11,8 +11,8 @@ HEIGHT = 900
 #start and end coords, WIDTH-
 X_START = 50 #400 #50
 Y_START = 850 #100 #850 #600
-X_GOAL = 1100
-Y_GOAL = 100
+X_GOAL = 1100#100#
+Y_GOAL = 100#600#
 
 #coords and dimensions for rectangular obstacle
 OB_1_X = 400 #random.randint(200, 1000)
@@ -31,6 +31,7 @@ titleLabel = pyglet.text.Label(text='SNN Multiple Boids Maze Navigation', x=WIDT
 goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch=drawBatch)
 
 boidList = []
+finished_boids = []
 obList = []
 initialised = False
 
@@ -39,11 +40,18 @@ def init():
     b_x = X_START 
     b_y = Y_START
     maverick = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
+    maverick.setTarget(X_GOAL, Y_GOAL)
     goose = boid.Boid(x=b_x, y=b_y-50, batch=drawBatch)
+    goose.setTarget(X_GOAL, Y_GOAL)
     mehve = boid.Boid(x=b_x, y=b_y-100, batch=drawBatch)
+    mehve.setTarget(X_GOAL, Y_GOAL)
     red_five = boid.Boid(x=b_x+50, y=b_y, batch=drawBatch)
+    red_five.setTarget(X_GOAL, Y_GOAL)
     serenity = boid.Boid(x=b_x+50, y=b_y-50, batch=drawBatch)
+    serenity.setTarget(X_GOAL, Y_GOAL)
     nirvash = boid.Boid(x=b_x+50, y=b_y-100, batch=drawBatch)
+    nirvash.setTarget(X_GOAL, Y_GOAL)
+
     #init obstacles
     square_1 = physicalWall.Square(x=OB_1_X, y=OB_1_Y, batch=drawBatch)
     square_1.setScale(OB_1_SCALE)
@@ -58,54 +66,72 @@ def on_draw():
     drawBatch.draw()
 
 def navigateBoid(physics_conn):
-    global boidList, initialised
+    global boidList, initialised, finished_boids
     index = 0
     if initialised:
         for burd in boidList:
-            #receive spikes from network
-            actuator_spikes_literal = physics_conn[index].recv()
-            print('physics receive')
-            burd.num_response(actuator_spikes_literal)
-            index += 1
+            if  not (burd in finished_boids):
+                #receive spikes from network
+                actuator_spikes_literal = physics_conn[index].recv()
+                print('physics receive')
+                burd.num_response(actuator_spikes_literal)
+                index += 1
+            else:
+                index+=1
 
 def updateInput(dt, physics_conn):
-    global boidList, obList
-    index = 0
+    global boidList, obList, finished_boids
     I_avoid = None
     I_attract = None
+
+    index = 0
+    for burd in boidList:
+        if  burd in finished_boids:
+            physics_conn[index].send([0, 0, 'ended'])
+            index += 1
+        else:
+            b_x, b_y = burd.getPos()
+            angleList = []
+            weightList = []
+            typeList = []
+            for ob in obList:
+                boidToSquare = ob.shortestDistance(b_x, b_y)
+                angleToSquare = ob.angleFromBoidToObject(b_x, b_y)
+                if boidToSquare < 150*ob.getScale():
+                    weightList.append(1/(boidToSquare**2))
+                    angleList.append(angleToSquare)
+                    typeList.append('w')
+
+            for otherBurds in boidList:
+                if burd != otherBurds:
+                    b_x, b_y = otherBurds.getPos()
+                    boidToBoid = burd.shortestDistance(b_x, b_y)
+                    angleToBoid = burd.angleFromBoidToBoid(b_x, b_y)
+                    if boidToBoid < 70:
+                        weightList.append(1/(boidToBoid**2))
+                        angleList.append(angleToBoid)
+                        typeList.append('b')
+
+            op = burd.getOptimalHeading()
+            I_avoid = burd.avoid_sensor_input(dt, angleList, weightList, typeList)
+            I_attract = burd.optimal_sensor_input(dt, op)
+            physics_conn[index].send([I_avoid, I_attract, index])
+            print('physics send')
+            index += 1
+
+def checkGoal():
+    global finished_boids, boidList
     for burd in boidList:
         b_x, b_y = burd.getPos()
-        angleList = []
-        weightList = []
-        typeList = []
-        for ob in obList:
-            boidToSquare = ob.shortestDistance(b_x, b_y)
-            angleToSquare = ob.angleFromBoidToObject(b_x, b_y)
-            if boidToSquare < 150*ob.getScale():
-                weightList.append(1/(boidToSquare**2))
-                angleList.append(angleToSquare)
-                typeList.append('w')
+        if X_GOAL-20 <=b_x <= X_GOAL+20 and Y_GOAL-20 <=b_y <= Y_GOAL+20:
+            burd.record(str(burd.find(boidList)) + '.txt')
+            boidList.remove(burd)
+            finished_boids.append(burd)
 
-        for otherBurds in boidList:
-            if burd != otherBurds:
-                b_x, b_y = otherBurds.getPos()
-                boidToBoid = burd.shortestDistance(b_x, b_y)
-                angleToBoid = burd.angleFromBoidToBoid(b_x, b_y)
-                if boidToBoid < 70:
-                    weightList.append(1/(boidToBoid**2))
-                    angleList.append(angleToBoid)
-                    typeList.append('b')
-
-        op = burd.getOptimalHeading()
-        I_avoid = burd.avoid_sensor_input(dt, angleList, weightList, typeList)
-        I_attract = burd.optimal_sensor_input(dt, op)
-        physics_conn[index].send([I_avoid, I_attract, index])
-        print('physics send')
-        index += 1
     
 def update(dt, physics_conn):
     dt = 0.08
-    global boidList, obList, initialised
+    global boidList, obList, initialised, finished_boids
 
     gameList = obList + boidList
     for i in range(len(gameList)):
@@ -118,6 +144,8 @@ def update(dt, physics_conn):
                 gameObj_2.handleCollisionWith(gameObj_1)
                 print('COLLISION')
                 exit()
+
+    checkGoal()
 
     navigateBoid(physics_conn)
 
@@ -203,6 +231,8 @@ def RUN_NET(network_conn, brain_index):
         network_conn.send(new_spikes)
         print('network send')
         I_avoid, I_attract, index = network_conn.recv()
+        if index == 'ended':
+            stop()
         print('network receive')
         I_neg.values[:] = I_avoid
         I_pos.values[:] = I_attract
