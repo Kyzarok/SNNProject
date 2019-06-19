@@ -37,8 +37,6 @@ boidList = []
 obList = []
 initialised = False
 
-LOCK = False
-
 def init():
     global boidList, obList
     b_x = X_START 

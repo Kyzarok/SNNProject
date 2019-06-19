@@ -15,7 +15,7 @@ class Boid(phy.Physical):
         self.rotation = -math.degrees(self.heading)
         self.target_x = 1100
         self.target_y = 100
-        self.resV = 60.0
+        self.resV = 30.0
         self.velocity_x = self.resV * math.cos(self.heading)
         self.velocity_y = self.resV * math.sin(self.heading)
         self.old_spikes = [0] * 11
@@ -126,13 +126,24 @@ class Boid(phy.Physical):
             if total == 0:
                 total = 1
             normalised = [x/total for x in new_spikes]
-            for j in range(len(normalised)):
-                if j != 5 :
-                    normalised[j] *= 0.5
 
-            for i in range(len(normalised)):
+            for j in range(len(normalised)):
+                if j==0 or j==1 or j==9 or j==10:
+                    normalised[j] *= 0.2
+                if j==2 or j==3 or j==7 or j==8:
+                    normalised[j] *= 0.4
+                if j==4 or j==6:
+                    normalised[j] *= 0.8
+
+
+            for i in range(1, len(normalised)-1):
                 orientation = (-5*math.pi/6) + (i*math.pi/6)
                 new_heading += normalised[i] * orientation
+            
+            if (normalised[0] > 0) and (normalised[10] > 0):
+                new_heading += (normalised[0] + normalised[10])*(math.pi)
+            else:
+                new_heading += (normalised[0] * (-5*math.pi/6)) + (normalised[10] * (5*math.pi/6))
 
             if new_heading > math.pi:
                 new_heading += -2*math.pi
@@ -146,11 +157,11 @@ class Boid(phy.Physical):
 
 
     def avoid_sensor_input(self, dt, angle, weight, typeList):
-        time = arange(int(dt / (0.1*ms)) + 1) * (0.1*ms)
+        time = arange(int(dt / (1.0*ms)) + 1) * (1.0*ms)
 
-        w_weight_bound = (1/(150**2)) *2
-        b_weight_bound = (1/100**2) * 2.5
-        A_weight = [0.0] * 11
+        weight_factor = 10**4 * 0.5
+        print(weight)
+        A_weight = [0] * 11
         frequency = [1.0] * 11
 
         for a in range(len(angle)): #go through the list of obstacles
@@ -164,18 +175,11 @@ class Boid(phy.Physical):
                     current_sensor_orientation += 2*math.pi
 
                 if current_sensor_orientation <= angle[a] < current_sensor_orientation + math.pi/6:
-                    weight_bound = 0
-                    if typeList[a] == 'b':
-                        weight_bound = b_weight_bound
-                    else:
-                        weight_bound = w_weight_bound
-                    
-                    A_weight[i] += (weight[a]/weight_bound)
-                    A_weight[i+1] += (weight[a]/weight_bound)
+                    A_weight[i] = 10 * (abs(diff/(math.pi/6))) * weight[a] * weight_factor
+                    A_weight[i+1] = 10 * ((1-abs(diff/(math.pi/6)))) * weight[a] * weight_factor
 
-                    frequency[i] *= 10 * (1+abs(diff/(math.pi/6)))
-                    frequency[i+1] *= 10 * (1+(1 - abs(diff/(math.pi/6))))
-
+                    frequency[i] *= 10 * (abs(diff/(math.pi/6)))
+                    frequency[i+1] *= 10 * ((1 - abs(diff/(math.pi/6))))
         A = 1.0
         I_values = []
         for t in time:
@@ -187,10 +191,12 @@ class Boid(phy.Physical):
 
 
     def optimal_sensor_input(self, dt, optimal):
-        time = arange(int(dt / (0.1*ms)) + 1) * (0.1*ms)
+        time = arange(int(dt / (1.0*ms)) + 1) * (1.0*ms)
 
         A_weight = [0.0] * 11
         frequency = [0.0] * 11
+
+        BACKWARDS = True
 
         for i in range(10): #go through each sensor gap
             current_sensor_orientation = -5*math.pi/6 + i*math.pi/6 + self.heading
@@ -202,11 +208,14 @@ class Boid(phy.Physical):
                 current_sensor_orientation += 2*math.pi
 
             if current_sensor_orientation <= optimal < current_sensor_orientation + math.pi/6:
+                BACKWARDS = False
                 A_weight[i] = 10 * (abs(diff/(math.pi/6)))
                 A_weight[i+1] = 10 * ((1-abs(diff/(math.pi/6))))
                 frequency[i] = (diff/(math.pi/6)) * 10
                 frequency[i+1] = (1-diff/(math.pi/6)) * 10
-    
+
+        if BACKWARDS:
+            self.flip()
 
         I_values = []
         for t in time:
@@ -215,6 +224,10 @@ class Boid(phy.Physical):
                 new[k] = (A_weight[k])*math.cos(2 * math.pi * (frequency[k]) * t)
             I_values.append(new)
         return I_values
+    
+    def flip(self):
+        print('flipcalled')
+        self.heading = -self.heading
 
     def angleFromBoidToBoid(self, boid_x, boid_y):
         diff_x, diff_y = 0.0, 0.0

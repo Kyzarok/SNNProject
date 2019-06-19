@@ -81,9 +81,8 @@ def updateInput(dt, physics_conn):
         for ob in obList:
             boidToSquare = ob.shortestDistance(b_x, b_y)
             angleToSquare = ob.angleFromBoidToObject(b_x, b_y)
-            if boidToSquare < 150:
-                weight = 1/((boidToSquare)**2)
-                weightList.append(weight)
+            if boidToSquare < 150*ob.getScale():
+                weightList.append(1/(boidToSquare**2))
                 angleList.append(angleToSquare)
                 typeList.append('w')
 
@@ -92,9 +91,8 @@ def updateInput(dt, physics_conn):
                 b_x, b_y = otherBurds.getPos()
                 boidToBoid = burd.shortestDistance(b_x, b_y)
                 angleToBoid = burd.angleFromBoidToBoid(b_x, b_y)
-                if boidToBoid < 100:
-                    weight = 1/((boidToBoid ** 2))
-                    weightList.append(weight)
+                if boidToBoid < 70:
+                    weightList.append(1/(boidToBoid**2))
                     angleList.append(angleToBoid)
                     typeList.append('b')
 
@@ -141,7 +139,7 @@ def RUN_NET(network_conn, brain_index):
     # Parameters
     dt = 80 * ms
     modval = dt
-    my_default = 0.1 * ms
+    my_default = 1.0 * ms
     deltaI = .7*ms  # inhibitory delay
 
     dummy_arr = []
@@ -165,7 +163,7 @@ def RUN_NET(network_conn, brain_index):
     eqs_avoid = '''
     dv/dt = (I_neg(t%modval, i) - v)/tau_sensors : 1
     '''
-    negative_sensors = NeuronGroup(11, model=eqs_avoid, threshold='v > 1.0', reset='v = 0', refractory=1*ms, method='euler', name='negative_sensors')
+    negative_sensors = NeuronGroup(11, model=eqs_avoid, threshold='v > 2.0', reset='v = 0', refractory=1*ms, method='euler', name='negative_sensors')
     neg_spikes_sensors = SpikeMonitor(negative_sensors, name='neg_spikes_sensors')
 
     eqs_attract = '''
@@ -176,25 +174,25 @@ def RUN_NET(network_conn, brain_index):
 
 
     # Actuator neurons
-    tau = 1 * ms
+    tau = 1.0 * ms
     taus = 1.001 * ms
-    wex = 5
+    wex = 4
     winh = -2
     eqs_actuator = '''
     dv/dt = (x - v)/tau : 1
     dx/dt = (y - x)/taus : 1 # alpha currents
     dy/dt = -y/taus : 1
     '''
-    actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>2', reset='v=0', method='exact', name='actuators')
+    actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>1', reset='v=0', method='exact', name='actuators')
     synapses_ex = Synapses(negative_sensors, actuators, on_pre='y+=winh', name='synapses_ex')
     synapses_ex.connect(j='i')
     synapses_inh = Synapses(negative_sensors, actuators, on_pre='y+=wex', delay=deltaI, name='synapses_inh')
     synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
 
-    WEXCITE = 7
+    W_OPTIMAL = 6
 
-    synapses_EXCITE = Synapses(positive_sensors, actuators, on_pre='y+=WEXCITE', name='synapses_EXCITE')
-    synapses_EXCITE.connect(j='i')
+    synapses_OPTIMAL= Synapses(positive_sensors, actuators, on_pre='y+=W_OPTIMAL', name='synapses_OPTIMAL')
+    synapses_OPTIMAL.connect(j='i')
 
     actuator_spikes = SpikeMonitor(actuators, name='actuator_spikes')
 
