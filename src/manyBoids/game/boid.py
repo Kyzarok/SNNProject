@@ -1,6 +1,6 @@
 #Class inheriting from physcialObject.py
 from game import physicalObject as phy
-import pyglet, math, random
+import pyglet, math, random, numpy
 from game import resources, util
 
 class Boid(phy.Physical):
@@ -8,13 +8,18 @@ class Boid(phy.Physical):
     def __init__(self, *args, **kwargs): #x_start, y_start, x_target, y_target
         super(Boid, self).__init__(img=resources.boidImage, *args, **kwargs)
         self.scale = 0.5
-        self.heading = -math.pi/2 * random.randint(0, 10)/10#start value
+        self.heading = -math.pi/4# * random.randint(0, 10)/10#start value
         self.rotation = -math.degrees(self.heading)
-        self.target_x = 1100
-        self.target_y = 100
+        self.target_x = 0
+        self.target_y = 0
         self.resV = 30.0
         self.velocity_x = self.resV * math.cos(self.heading)
         self.velocity_y = self.resV * math.sin(self.heading)
+        self.coord_record = [[self.x, self.y]]
+    
+    def setTarget(self, x, y):
+        self.target_x = x
+        self.target_y = y
 
     def correctVelocities(self, OP_weight, OB_B_weight, offset_x, offset_y):
         v_x, v_y = 0.0, 0.0
@@ -41,6 +46,7 @@ class Boid(phy.Physical):
         super(Boid, self).update(dt)
         self.x += self.velocity_x * dt
         self.y += self.velocity_y * dt
+        self.coord_record.append([self.x, self.y])
 
     def setToOptimalHeading(self):
         #optimal orientation: 
@@ -132,3 +138,12 @@ class Boid(phy.Physical):
     
     def getHeading(self):
         return self.heading
+
+
+    def record(self, file_index):
+        save_coords = 'coords_' + file_index
+        numpy.savetxt(save_coords, self.coord_record, delimiter=' ', newline='\\')
+
+    def get_record(self):
+        return self.coord_record
+

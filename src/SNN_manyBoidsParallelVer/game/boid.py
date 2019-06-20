@@ -11,7 +11,7 @@ class Boid(phy.Physical):
     def __init__(self, *args, **kwargs):
         super(Boid, self).__init__(img=resources.boidImage, *args, **kwargs)
         self.scale = 0.5
-        self.heading = -math.pi/4# * random.randint(0, 10)/10 #start value
+        self.heading = -math.pi/4
         self.rotation = -math.degrees(self.heading)
         self.target_x = 0
         self.target_y = 0
@@ -255,8 +255,12 @@ class Boid(phy.Physical):
 
         return diffAngle
 
-    def record(self, file_index):
+    def text_record(self, file_index):
         save_spikes = 'spikes_' + file_index
         save_coords = 'coords_' + file_index
-        numpy.savetxt(save_spikes, self.spike_record, delimiter=' ', newline='\\')
-        numpy.savetxt(save_coords, self.coord_record, delimiter=' ', newline='\\')
+        numpy.savetxt(save_spikes, self.spike_record, delimiter=' ', newline='')
+        numpy.savetxt(save_coords, self.coord_record, delimiter=' ', newline='')
+
+    def get_record(self):
+        return self.coord_record
+

@@ -1,5 +1,6 @@
-import numpy, pyglet, time, random
+import numpy, pyglet, time, random, time
 from game import physicalObject, physicalWall, boid, resources, load, util
+from pyglet.gl import *
 
 #dimensions for window
 WIDTH = 1200
@@ -12,11 +13,11 @@ X_GOAL = 1100
 Y_GOAL = 100
 
 #coords and dimensions for rectangular obstacle
-OB_1_X = 400 #random.randint(200, 1000)
-OB_1_Y = 600 #random.randint(200, 700)
+OB_1_X = 600#400##300
+OB_1_Y = 450#600##650
 OB_1_SCALE = 1.0
-OB_2_X = 800 #random.randint(200, 1000)
-OB_2_Y = 250 #random.randint(200, 700)
+OB_2_X = 750 #800
+OB_2_Y = 500 #250
 OB_2_SCALE = 0.5
 
 # #values for getting trapped
@@ -40,30 +41,42 @@ goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch
 
 obstacles=None
 boidList = []
+finished_boids = []
+taken_files = 0
+
 obList = []
 eventStackSize = 0
 
 
 def init():
     global obstacles, boidList, obList, eventStackSize
-    BOID_NUMBER = int(input('enter number of boids: '))
-    print(str(BOID_NUMBER))
-    
-    #init boids
-    i = 0
-    while i < BOID_NUMBER:
-        b_x = random.randint(X_START - 50, X_START + 50)
-        b_y = random.randint(Y_START - 50, Y_START + 50)
-        new_boid = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
-        append = True
-        for burd in boidList:
-            if util.distance(new_boid.getPos(), burd.getPos()) < 30:
-                append = False
-        if append:
+    # BOID_NUMBER = int(input('enter number of boids: '))
+    # print(str(BOID_NUMBER))
+
+    BOID_NUMBER = 6
+
+    for i in range(2):
+        for j in range(3):
+            new_boid = boid.Boid(x=X_START + (i*50), y=Y_START - (j*50), batch=drawBatch)
+            new_boid.setTarget(X_GOAL, Y_GOAL)
             boidList.append(new_boid)
-        else:
-            i-=1
-        i+=1
+
+    #init boids
+    # i = 0
+    # while i < BOID_NUMBER:
+    #     b_x = random.randint(X_START - 50, X_START + 50)
+    #     b_y = random.randint(Y_START - 50, Y_START + 50)
+    #     new_boid = boid.Boid(x=b_x, y=b_y, batch=drawBatch)
+    #     append = True
+    #     for burd in boidList:
+    #         if util.distance(new_boid.getPos(), burd.getPos()) < 30:
+    #             append = False
+    #     if append:
+    #         new_boid.setTarget(X_GOAL, Y_GOAL)
+    #         boidList.append(new_boid)
+    #     else:
+    #         i-=1
+    #     i+=1
 
     #init obstacles
     square_1 = physicalWall.Square(x=OB_1_X, y=OB_1_Y, batch=drawBatch)
@@ -75,8 +88,22 @@ def init():
 
 @gameWindow.event
 def on_draw():
+    global finished_boids
     gameWindow.clear()
-    drawBatch.draw()
+    if boidList == []:
+        glBegin(GL_LINES)
+        for f in finished_boids:
+            coords = f.get_record()
+            for i in range(len(coords)-1):
+                x_0, y_0 = coords[i]
+                x_1, y_1 = coords[i+1]
+                glVertex2i(int(x_0), int(y_0))
+                glVertex2i(int(x_1), int(y_1))
+        glEnd()
+        for ob in obList:
+            ob.draw()
+    else:
+        drawBatch.draw()
 
 def normalise(W_OP, W_OB_B):
     total = W_OP + sum(W_OB_B)
@@ -128,12 +155,21 @@ def navigateBoids():
 
         burd.setToOptimalHeading()
         burd.correctVelocities(WEIGHT_OPTIMAL, WEIGHT_OBSTACLE_BOID, offset_x, offset_y)
-    
+
+def checkGoal():
+    global finished_boids, boidList, taken_files
+    for burd in boidList:
+        b_x, b_y = burd.getPos()
+        if X_GOAL-20 <=b_x <= X_GOAL+20 and Y_GOAL-20 <=b_y <= Y_GOAL+20:
+            burd.record(str(taken_files) + '.txt')
+            boidList.remove(burd)
+            finished_boids.append(burd)
+            taken_files += 1 
+
 def update(dt):
     global boidList, obList
 
     gameList = obList + boidList
-
     for i in range(len(gameList)):
         for j in range(i+1, len(gameList)):
             gameObj_1 = gameList[i]
@@ -144,7 +180,7 @@ def update(dt):
                 gameObj_2.handleCollisionWith(gameObj_1)
                 print('COLLISION')
                 exit()
-
+    checkGoal()
     navigateBoids()
 
     for obj in gameList:
@@ -153,5 +189,5 @@ def update(dt):
 
 if __name__ == '__main__':
     init()
-    pyglet.clock.schedule_interval(update, 1/10)
+    pyglet.clock.schedule_interval(update, 0.08)
     pyglet.app.run()

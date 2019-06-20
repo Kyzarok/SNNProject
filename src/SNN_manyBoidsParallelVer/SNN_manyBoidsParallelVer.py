@@ -2,24 +2,27 @@ import numpy, pyglet, time, random
 from game import physicalObject, physicalWall, boid, resources, load, util
 from brian2 import *
 import multiprocessing as mp
+from pyglet.gl import *
+from matplotlib import pyplot
+
 
 
 #dimensions for window
 WIDTH = 1200
 HEIGHT = 900
 
-#start and end coords, WIDTH-
+#start and end coords
 X_START = 50 #400 #50
 Y_START = 850 #100 #850 #600
 X_GOAL = 1100#100#
 Y_GOAL = 100#600#
 
 #coords and dimensions for rectangular obstacle
-OB_1_X = 400 #random.randint(200, 1000)
-OB_1_Y = 600 #random.randint(200, 700)
+OB_1_X = 600#300#600#400 
+OB_1_Y = 450#650#450#600 
 OB_1_SCALE = 1.0
-OB_2_X = 800 #random.randint(200, 1000) #350
-OB_2_Y = 250 #random.randint(200, 700) #450
+OB_2_X = 800#750#800 
+OB_2_Y = 250#500#250 
 OB_2_SCALE = 0.5
 
 #define window height and width
@@ -33,6 +36,7 @@ goalLabel = pyglet.text.Label(text='[    ] <- goal', x=X_GOAL-3, y=Y_GOAL, batch
 boidList = []
 finished_boids = []
 obList = []
+taken_files = 0
 initialised = False
 
 def init():
@@ -62,8 +66,22 @@ def init():
 
 @gameWindow.event
 def on_draw():
+    global finished_boids
     gameWindow.clear()
-    drawBatch.draw()
+    if boidList == []:
+        glBegin(GL_LINES)
+        for f in finished_boids:
+            coords = f.get_record()
+            for i in range(len(coords)-1):
+                x_0, y_0 = coords[i]
+                x_1, y_1 = coords[i+1]
+                glVertex2i(int(x_0), int(y_0))
+                glVertex2i(int(x_1), int(y_1))
+        glEnd()
+        for ob in obList:
+            ob.draw()
+    else:
+        drawBatch.draw()
 
 def navigateBoid(physics_conn):
     global boidList, initialised, finished_boids
@@ -120,18 +138,22 @@ def updateInput(dt, physics_conn):
             index += 1
 
 def checkGoal():
-    global finished_boids, boidList
+    global finished_boids, boidList, taken_files
     for burd in boidList:
         b_x, b_y = burd.getPos()
         if X_GOAL-20 <=b_x <= X_GOAL+20 and Y_GOAL-20 <=b_y <= Y_GOAL+20:
-            burd.record(str(burd.find(boidList)) + '.txt')
+            burd.text_record(str(taken_files) + '.txt')
             boidList.remove(burd)
             finished_boids.append(burd)
+            taken_files += 1
 
     
 def update(dt, physics_conn):
     dt = 0.08
     global boidList, obList, initialised, finished_boids
+
+    if boidList == []:
+        time.sleep(8)
 
     gameList = obList + boidList
     for i in range(len(gameList)):
@@ -241,6 +263,7 @@ def RUN_NET(network_conn, brain_index):
     print('BEGIN NEURAL NETWORK')
     run(1000000*dt)
     print('SNN STOPPED')
+
 
 if __name__ == '__main__':
     mp.set_start_method('spawn')
