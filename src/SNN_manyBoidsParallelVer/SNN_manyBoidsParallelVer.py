@@ -6,16 +6,15 @@ from pyglet.gl import *
 from matplotlib import pyplot
 
 
-
 #dimensions for window
-WIDTH = 1200
-HEIGHT = 900
+WIDTH = 3000 #1200
+HEIGHT = 1500 #900
 
 #start and end coords
-X_START = 50 #400 #50
-Y_START = 850 #100 #850 #600
-X_GOAL = 1100#100#
-Y_GOAL = 100#600#
+X_START = 50 #50 #400 #50
+Y_START = 1450 #850 #100 #850 #600
+X_GOAL = 2900#1100#100#
+Y_GOAL = 100 #100#600#
 
 #coords and dimensions for rectangular obstacle
 OB_1_X = 600#300#600#400 
@@ -24,6 +23,35 @@ OB_1_SCALE = 1.0
 OB_2_X = 800#750#800 
 OB_2_Y = 250#500#250 
 OB_2_SCALE = 0.5
+
+#BIGMAP OBSTACLES
+OB_1_X = 600
+OB_1_Y = 1200
+OB_1_SCALE = 1.0
+OB_2_X = 1000
+OB_2_Y = 1000
+OB_2_SCALE = 0.5
+OB_3_X = 2000
+OB_3_Y = 1000
+OB_3_SCALE = 2.0
+OB_4_X = 2500
+OB_4_Y = 500
+OB_4_SCALE = 1.0
+OB_5_X = 1500
+OB_5_Y = 600
+OB_5_SCALE = 1.0
+OB_6_X = 850
+OB_6_Y = 750
+OB_6_SCALE = 0.5
+OB_7_X = 1250
+OB_7_Y = 1000
+OB_7_SCALE = 0.25
+OB_8_X = 1900
+OB_8_Y = 400
+OB_8_SCALE = 0.5
+OB_9_X = 1150
+OB_9_Y = 500
+OB_9_SCALE = 0.5
 
 #define window height and width
 gameWindow = pyglet.window.Window(width=WIDTH, height=HEIGHT)
@@ -61,7 +89,23 @@ def init():
     square_1.setScale(OB_1_SCALE)
     square_2 = physicalWall.Square(x=OB_2_X, y=OB_2_Y, batch=drawBatch)
     square_2.setScale(OB_2_SCALE)
-    obList = [square_1, square_2]
+    square_3 = physicalWall.Square(x=OB_3_X, y=OB_3_Y, batch=drawBatch)
+    square_3.setScale(OB_3_SCALE)
+    square_4 = physicalWall.Square(x=OB_4_X, y=OB_4_Y, batch=drawBatch)
+    square_4.setScale(OB_4_SCALE)
+    square_5 = physicalWall.Square(x=OB_5_X, y=OB_5_Y, batch=drawBatch)
+    square_5.setScale(OB_5_SCALE)    
+    square_6 = physicalWall.Square(x=OB_6_X, y=OB_6_Y, batch=drawBatch)
+    square_6.setScale(OB_6_SCALE)
+    square_7 = physicalWall.Square(x=OB_7_X, y=OB_7_Y, batch=drawBatch)
+    square_7.setScale(OB_7_SCALE)    
+    square_8 = physicalWall.Square(x=OB_8_X, y=OB_8_Y, batch=drawBatch)
+    square_8.setScale(OB_8_SCALE)    
+    square_9 = physicalWall.Square(x=OB_9_X, y=OB_9_Y, batch=drawBatch)
+    square_9.setScale(OB_9_SCALE)
+
+
+    obList = [square_1, square_2, square_3, square_4, square_5, square_6, square_7, square_8, square_9]
     boidList = [maverick, goose, mehve, red_five, serenity, nirvash]
 
 @gameWindow.event
@@ -125,7 +169,7 @@ def updateInput(dt, physics_conn):
                     b_x, b_y = otherBurds.getPos()
                     boidToBoid = burd.shortestDistance(b_x, b_y)
                     angleToBoid = burd.angleFromBoidToBoid(b_x, b_y)
-                    if boidToBoid < 70:
+                    if boidToBoid < 100*otherBurds.getScale():
                         weightList.append(1/(boidToBoid**2))
                         angleList.append(angleToBoid)
                         typeList.append('b')
@@ -142,7 +186,9 @@ def checkGoal():
     for burd in boidList:
         b_x, b_y = burd.getPos()
         if X_GOAL-20 <=b_x <= X_GOAL+20 and Y_GOAL-20 <=b_y <= Y_GOAL+20:
-            burd.text_record(str(taken_files) + '.txt')
+            # TO SAVE DATA UN COMMENT THE LOWER NEXT TWO LINES
+            # burd.text_record_spikes(str(FILENAME))
+            # burd.text_record_coords(str(FILENAME))
             boidList.remove(burd)
             finished_boids.append(burd)
             taken_files += 1
@@ -226,18 +272,18 @@ def RUN_NET(network_conn, brain_index):
     # Actuator neurons
     tau = 1.0 * ms
     taus = 1.001 * ms
-    wex = 4
-    winh = -2
+    w_ex = 4
+    w_inh = -6
     eqs_actuator = '''
     dv/dt = (x - v)/tau : 1
     dx/dt = (y - x)/taus : 1 # alpha currents
     dy/dt = -y/taus : 1
     '''
     actuators = NeuronGroup(11, model=eqs_actuator, threshold='v>1', reset='v=0', method='exact', name='actuators')
-    synapses_ex = Synapses(negative_sensors, actuators, on_pre='y+=winh', name='synapses_ex')
-    synapses_ex.connect(j='i')
-    synapses_inh = Synapses(negative_sensors, actuators, on_pre='y+=wex', delay=deltaI, name='synapses_inh')
-    synapses_inh.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
+    synapses_inh = Synapses(negative_sensors, actuators, on_pre='y+=w_inh', name='synapses_inh')
+    synapses_inh.connect(j='i')
+    synapses_ex = Synapses(negative_sensors, actuators, on_pre='y+=w_ex', delay=deltaI, name='synapses_ex')
+    synapses_ex.connect('abs(((j - i) % N_post) - N_post/2) <= 1')
 
     W_OPTIMAL = 6
 

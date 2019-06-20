@@ -139,10 +139,8 @@ class Boid(phy.Physical):
     def getHeading(self):
         return self.heading
 
-
-    def record(self, file_index):
-        save_coords = 'coords_' + file_index
-        numpy.savetxt(save_coords, self.coord_record, delimiter=' ', newline='\\')
+    def text_record_coords(self, file_index):
+        numpy.savetxt(file_index, self.coord_record, delimiter=' ', newline=' ')
 
     def get_record(self):
         return self.coord_record

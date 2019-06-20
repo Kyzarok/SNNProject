@@ -21,6 +21,7 @@ class Boid(phy.Physical):
         self.old_spikes = [0] * 11
         self.coord_record = [[self.x, self.y]]
         self.spike_record = []
+        self.flip_count = 0
 
     def setTarget(self, x, y):
         self.target_x = x
@@ -103,71 +104,77 @@ class Boid(phy.Physical):
         if(actuator_spikes_literal == None):
             print('NoneType Error')
         else:
+            if self.flip_count > 3:
+                self.flip()
+                self.flip_count = 0
 
-            l_bracket_position = actuator_spikes_literal.find('[')
-            r_bracket_position = actuator_spikes_literal.find(']')
-
-            res = actuator_spikes_literal[l_bracket_position + 1 : r_bracket_position]
-
-            actuator_spikes = []
-            for i in range(10):
-                index = res.find(',')
-                if index:
-                    actuator_spikes.append(int(res[:index]))
-                    res = res[index + 1:]
-            actuator_spikes.append(int(res))
-
-            new_spikes = actuator_spikes[:]
-
-            for i in range(11):
-                new_spikes[i] -= self.old_spikes[i]
-            self.spike_record.append(new_spikes)
-            
-            self.old_spikes = actuator_spikes[:]
-
-            print('Spikes of sensors from most negative (-150 degrees) to most positive (+150 degrees) with the front of the boid being 0 degrees: ')
-            print(new_spikes)
-
-            new_heading = self.heading
-
-            total = sum(new_spikes)
-            if total == 0:
-                total = 1
-            normalised = [x/total for x in new_spikes]
-
-            for j in range(len(normalised)):
-                if j==0 or j==1 or j==9 or j==10:
-                    normalised[j] *= 0.2
-                if j==2 or j==3 or j==7 or j==8:
-                    normalised[j] *= 0.4
-                if j==4 or j==6:
-                    normalised[j] *= 0.8
-
-
-            for i in range(1, len(normalised)-1):
-                orientation = (-5*math.pi/6) + (i*math.pi/6)
-                new_heading += normalised[i] * orientation
-            
-            if (normalised[0] > 0) and (normalised[10] > 0):
-                new_heading += (normalised[0] + normalised[10])*(math.pi)
             else:
-                new_heading += (normalised[0] * (-5*math.pi/6)) + (normalised[10] * (5*math.pi/6))
+                l_bracket_position = actuator_spikes_literal.find('[')
+                r_bracket_position = actuator_spikes_literal.find(']')
 
-            if new_heading > math.pi:
-                new_heading += -2*math.pi
-            elif new_heading < -math.pi:
-                new_heading += 2*math.pi
+                res = actuator_spikes_literal[l_bracket_position + 1 : r_bracket_position]
 
-            self.heading = new_heading
-            position = self.getPos()
-            print('BOID AT ' + str(position) + ' HAS NEW HEADING: ')
-            print(self.heading)
+                actuator_spikes = []
+                for i in range(10):
+                    index = res.find(',')
+                    if index:
+                        actuator_spikes.append(int(res[:index]))
+                        res = res[index + 1:]
+                actuator_spikes.append(int(res))
+
+                new_spikes = actuator_spikes[:]
+
+                for i in range(11):
+                    new_spikes[i] -= self.old_spikes[i]
+                self.spike_record.append(new_spikes)
+                
+                self.old_spikes = actuator_spikes[:]
+
+                print('Spikes of sensors from most negative (-150 degrees) to most positive (+150 degrees) with the front of the boid being 0 degrees: ')
+                print(new_spikes)
+
+                new_heading = self.heading
+
+                total = sum(new_spikes)
+                if total == 0:
+                    total = 1
+                normalised = [x/total for x in new_spikes]
+
+                for j in range(1, len(normalised)-1):
+                    if j==1 or j==9:
+                        normalised[j] *= 0.2
+                    if j==2 or j==3 or j==7 or j==8:
+                        normalised[j] *= 0.4
+                    if j==4 or j==6:
+                        normalised[j] *= 0.8
+
+
+                for i in range(1, len(normalised)-1):
+                    orientation = (-5*math.pi/6) + (i*math.pi/6)
+                    new_heading += normalised[i] * orientation
+                
+                if (normalised[0] > 0.1) and (normalised[10] > 0.1):
+                    new_heading += (normalised[0] + normalised[10])*(math.pi)
+                else:
+                    new_heading += (0.2*normalised[0] * (-5*math.pi/6)) + (0.2*normalised[10] * (5*math.pi/6))
+
+                if new_heading > math.pi:
+                    new_heading += -2*math.pi
+                elif new_heading < -math.pi:
+                    new_heading += 2*math.pi
+
+                self.heading = new_heading
+                position = self.getPos()
+
+                print('BOID AT ' + str(position) + ' HAS NEW HEADING: ')
+                print(self.heading)
 
 
     def avoid_sensor_input(self, dt, angle, weight, typeList):
         time = arange(int(dt / (1.0*ms)) + 1) * (1.0*ms)
 
-        weight_factor = 10**4 * 0.5
+        b_weight_factor = 10**4 * 0.4
+        w_weight_factor = 10**4 * 1.5
         A_weight = [0] * 11
         frequency = [1.0] * 11
 
@@ -182,6 +189,11 @@ class Boid(phy.Physical):
                     current_sensor_orientation += 2*math.pi
 
                 if current_sensor_orientation <= angle[a] < current_sensor_orientation + math.pi/6:
+                    weight_factor = 0
+                    if typeList[a] == 'w':
+                        weight_factor = w_weight_factor
+                    elif typeList[a] == 'b':
+                        weight_factor = b_weight_factor
                     A_weight[i] = 10 * (abs(diff/(math.pi/6))) * weight[a] * weight_factor
                     A_weight[i+1] = 10 * ((1-abs(diff/(math.pi/6)))) * weight[a] * weight_factor
 
@@ -221,10 +233,12 @@ class Boid(phy.Physical):
                 frequency[i] = (diff/(math.pi/6)) * 10
                 frequency[i+1] = (1-diff/(math.pi/6)) * 10
 
-        if BACKWARDS:
-            self.flip()
 
         I_values = []
+
+        if BACKWARDS:
+            self.flip_count += 1
+
         for t in time:
             new = [0.0] * 11
             for k in range(len(frequency)):
@@ -234,7 +248,10 @@ class Boid(phy.Physical):
     
     def flip(self):
         print('flipcalled')
-        self.heading = -self.heading
+        if self.heading >=0:
+            self.heading += -math.pi
+        else:
+            self.heading += math.pi
 
     def angleFromBoidToBoid(self, boid_x, boid_y):
         diff_x, diff_y = 0.0, 0.0
@@ -255,11 +272,11 @@ class Boid(phy.Physical):
 
         return diffAngle
 
-    def text_record(self, file_index):
-        save_spikes = 'spikes_' + file_index
-        save_coords = 'coords_' + file_index
-        numpy.savetxt(save_spikes, self.spike_record, delimiter=' ', newline='')
-        numpy.savetxt(save_coords, self.coord_record, delimiter=' ', newline='')
+    def text_record_spikes(self, file_index):
+        numpy.savetxt(file_index, self.spike_record, delimiter=' ', newline=' ')
+    
+    def text_record_coords(self, file_index):
+        numpy.savetxt(file_index, self.coord_record, delimiter=' ', newline=' ')
 
     def get_record(self):
         return self.coord_record

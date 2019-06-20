@@ -3,22 +3,43 @@ from game import physicalObject, physicalWall, boid, resources, load, util
 from pyglet.gl import *
 
 #dimensions for window
-WIDTH = 1200
-HEIGHT = 900
+WIDTH = 3000 #1200
+HEIGHT = 1500 #900
 
 #start and end coords, WIDTH-
 X_START = 50
-Y_START = 850
-X_GOAL = 1100
+Y_START = 1450
+X_GOAL = 2900
 Y_GOAL = 100
 
 #coords and dimensions for rectangular obstacle
-OB_1_X = 600#400##300
-OB_1_Y = 450#600##650
+OB_1_X = 600#600#400##300
+OB_1_Y = 1200#450#600##650
 OB_1_SCALE = 1.0
-OB_2_X = 750 #800
-OB_2_Y = 500 #250
+OB_2_X = 1000#750 #800
+OB_2_Y = 1000#500 #250
 OB_2_SCALE = 0.5
+OB_3_X = 2000
+OB_3_Y = 1000
+OB_3_SCALE = 2.0
+OB_4_X = 2500
+OB_4_Y = 500
+OB_4_SCALE = 1.0
+OB_5_X = 1500
+OB_5_Y = 600
+OB_5_SCALE = 1.0
+OB_6_X = 850
+OB_6_Y = 750
+OB_6_SCALE = 0.5
+OB_7_X = 1250
+OB_7_Y = 1000
+OB_7_SCALE = 0.25
+OB_8_X = 1900
+OB_8_Y = 400
+OB_8_SCALE = 0.5
+OB_9_X = 1150
+OB_9_Y = 500
+OB_9_SCALE = 0.5
 
 # #values for getting trapped
 # OB_1_X = 500 
@@ -83,8 +104,23 @@ def init():
     square_1.setScale(OB_1_SCALE)
     square_2 = physicalWall.Square(x=OB_2_X, y=OB_2_Y, batch=drawBatch)
     square_2.setScale(OB_2_SCALE)
+    square_3 = physicalWall.Square(x=OB_3_X, y=OB_3_Y, batch=drawBatch)
+    square_3.setScale(OB_3_SCALE)
+    square_4 = physicalWall.Square(x=OB_4_X, y=OB_4_Y, batch=drawBatch)
+    square_4.setScale(OB_4_SCALE)
+    square_5 = physicalWall.Square(x=OB_5_X, y=OB_5_Y, batch=drawBatch)
+    square_5.setScale(OB_5_SCALE)    
+    square_6 = physicalWall.Square(x=OB_6_X, y=OB_6_Y, batch=drawBatch)
+    square_6.setScale(OB_6_SCALE)
+    square_7 = physicalWall.Square(x=OB_7_X, y=OB_7_Y, batch=drawBatch)
+    square_7.setScale(OB_7_SCALE)    
+    square_8 = physicalWall.Square(x=OB_8_X, y=OB_8_Y, batch=drawBatch)
+    square_8.setScale(OB_8_SCALE)    
+    square_9 = physicalWall.Square(x=OB_9_X, y=OB_9_Y, batch=drawBatch)
+    square_9.setScale(OB_9_SCALE)
 
-    obList = [square_1, square_2]
+
+    obList = [square_1, square_2, square_3, square_4, square_5, square_6, square_7, square_8, square_9]
 
 @gameWindow.event
 def on_draw():
@@ -161,7 +197,8 @@ def checkGoal():
     for burd in boidList:
         b_x, b_y = burd.getPos()
         if X_GOAL-20 <=b_x <= X_GOAL+20 and Y_GOAL-20 <=b_y <= Y_GOAL+20:
-            burd.record(str(taken_files) + '.txt')
+            # TO SAVE DATA UN COMMENT THE LOWER NEXT LINE
+            # burd.text_record_coords(str(FILENAME))
             boidList.remove(burd)
             finished_boids.append(burd)
             taken_files += 1 
