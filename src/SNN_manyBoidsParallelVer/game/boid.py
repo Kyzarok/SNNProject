@@ -173,7 +173,7 @@ class Boid(phy.Physical):
     def avoid_sensor_input(self, dt, angle, weight, typeList):
         time = arange(int(dt / (1.0*ms)) + 1) * (1.0*ms)
 
-        b_weight_factor = 10**4 * 0.4
+        b_weight_factor = 10**4 * 0.45#0.4
         w_weight_factor = 10**4 * 1.5
         A_weight = [0] * 11
         frequency = [1.0] * 11
@@ -273,10 +273,12 @@ class Boid(phy.Physical):
         return diffAngle
 
     def text_record_spikes(self, file_index):
-        numpy.savetxt(file_index, self.spike_record, delimiter=' ', newline=' ')
+        fname = 'spikes_' + str(file_index)
+        numpy.save(fname, self.spike_record)
     
     def text_record_coords(self, file_index):
-        numpy.savetxt(file_index, self.coord_record, delimiter=' ', newline=' ')
+        fname = 'coords_' + str(file_index)
+        numpy.save(fname, self.coord_record)
 
     def get_record(self):
         return self.coord_record
