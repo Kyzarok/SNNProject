@@ -7,13 +7,13 @@ from matplotlib import pyplot
 
 
 #dimensions for window
-WIDTH = 3000 #1200 #3000
-HEIGHT = 1500 #900 #1500
+WIDTH = 2800 #1200 #3000
+HEIGHT = 1700 #900 #1500
 
 #start and end coords
 X_START = 50 #50 #400 #50
-Y_START = 1450 #850 #1450 #850 #100 #850 #600
-X_GOAL = 2900 #1100 #2900#1100#100#
+Y_START = HEIGHT - 50 #850 #1450 #850 #100 #850 #600
+X_GOAL = WIDTH - 100 #1100 #2900#1100#100#
 Y_GOAL = 100 #100#600#
 
 # #coords and dimensions for rectangular obstacle
@@ -24,34 +24,6 @@ Y_GOAL = 100 #100#600#
 # OB_2_Y = 250#500#250 
 # OB_2_SCALE = 0.5
 
-#BIGMAP OBSTACLES
-OB_1_X = 600
-OB_1_Y = 1200
-OB_1_SCALE = 1.0
-OB_2_X = 1000
-OB_2_Y = 1000
-OB_2_SCALE = 0.5
-OB_3_X = 2000
-OB_3_Y = 1000
-OB_3_SCALE = 2.0
-OB_4_X = 2500
-OB_4_Y = 500
-OB_4_SCALE = 1.0
-OB_5_X = 1500
-OB_5_Y = 600
-OB_5_SCALE = 1.0
-OB_6_X = 850
-OB_6_Y = 750
-OB_6_SCALE = 0.5
-OB_7_X = 1250
-OB_7_Y = 1000
-OB_7_SCALE = 0.25
-OB_8_X = 1900
-OB_8_Y = 400
-OB_8_SCALE = 0.5
-OB_9_X = 1150
-OB_9_Y = 500
-OB_9_SCALE = 0.5
 
 # # #values for getting trapped
 # OB_1_X = 500 
@@ -60,6 +32,22 @@ OB_9_SCALE = 0.5
 # OB_2_X = 600 
 # OB_2_Y = 550
 # OB_2_SCALE = 0.5
+
+# #BIGMAP OBSTACLES
+# OB_X = [600, 1000, 2000, 2500, 1500, 850, 1250, 1900, 1150]
+# OB_Y = [1200, 1000, 1000, 500, 600, 750, 1000, 400, 500]
+# OB_SCALE = [1.0, 0.5, 2.0, 1.0, 1.0, 0.5, 0.25, 0.5, 0.5]
+
+#DEMO MAP 1
+OB_X = [500, 800, 850, 1400, 1700, 2000]
+OB_Y = [1200, 700, 450, 1050, 1050, 350]
+OB_SCALE = [2.0, 0.5, 0.5, 0.5, 0.5, 1.5]
+
+# #DEMO MAP 2
+# OB_X = []
+# OB_Y = []
+# OB_SCALE = []
+
 
 #define window height and width
 gameWindow = pyglet.window.Window(width=WIDTH, height=HEIGHT)
@@ -92,28 +80,25 @@ def init():
     nirvash = boid.Boid(x=b_x+50, y=b_y-100, batch=drawBatch)
     nirvash.setTarget(X_GOAL, Y_GOAL)
 
+    #consider maze walls
+    walls_x = [-128, WIDTH/2, WIDTH/2, WIDTH+128] #left, top, bottom, right
+    walls_y = [HEIGHT/2, HEIGHT+128, -128, HEIGHT/2] #left, top, bottom, right
+    wall_width = [256, WIDTH, WIDTH, 256]
+    wall_height = [HEIGHT, 256, 256, HEIGHT]
+
+    for i in range(4):
+        this_wall = physicalWall.Rect(x=walls_x[i], y=walls_y[i], batch=drawBatch)
+        this_wall.setHW(wall_width[i], wall_height[i])
+        obList.append(this_wall)
+
     #init obstacles
-    square_1 = physicalWall.Square(x=OB_1_X, y=OB_1_Y, batch=drawBatch)
-    square_1.setScale(OB_1_SCALE)
-    square_2 = physicalWall.Square(x=OB_2_X, y=OB_2_Y, batch=drawBatch)
-    square_2.setScale(OB_2_SCALE)
-    square_3 = physicalWall.Square(x=OB_3_X, y=OB_3_Y, batch=drawBatch)
-    square_3.setScale(OB_3_SCALE)
-    square_4 = physicalWall.Square(x=OB_4_X, y=OB_4_Y, batch=drawBatch)
-    square_4.setScale(OB_4_SCALE)
-    square_5 = physicalWall.Square(x=OB_5_X, y=OB_5_Y, batch=drawBatch)
-    square_5.setScale(OB_5_SCALE)    
-    square_6 = physicalWall.Square(x=OB_6_X, y=OB_6_Y, batch=drawBatch)
-    square_6.setScale(OB_6_SCALE)
-    square_7 = physicalWall.Square(x=OB_7_X, y=OB_7_Y, batch=drawBatch)
-    square_7.setScale(OB_7_SCALE)    
-    square_8 = physicalWall.Square(x=OB_8_X, y=OB_8_Y, batch=drawBatch)
-    square_8.setScale(OB_8_SCALE)    
-    square_9 = physicalWall.Square(x=OB_9_X, y=OB_9_Y, batch=drawBatch)
-    square_9.setScale(OB_9_SCALE)
+
+    for i in range(len(OB_X)):
+        square = physicalWall.Square(x=OB_X[i], y=OB_Y[i], batch=drawBatch)
+        square.setScale(OB_SCALE[i])
+        obList.append(square)
 
 
-    obList = [square_1, square_2, square_3, square_4, square_5, square_6, square_7, square_8, square_9]
     boidList = [maverick, goose, mehve, red_five, serenity, nirvash]
 
 @gameWindow.event
