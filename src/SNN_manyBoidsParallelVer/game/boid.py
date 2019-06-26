@@ -173,7 +173,7 @@ class Boid(phy.Physical):
     def avoid_sensor_input(self, dt, angle, weight, typeList):
         time = arange(int(dt / (1.0*ms)) + 1) * (1.0*ms)
 
-        b_weight_factor = 10**4 * 0.45#0.4
+        b_weight_factor = 10**4 * 0.425#0.45#0.4
         w_weight_factor = 10**4 * 1.5
         A_weight = [0] * 11
         frequency = [1.0] * 11
